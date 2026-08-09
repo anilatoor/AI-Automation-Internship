@@ -104,6 +104,16 @@ Detailed work is available in:
 Day-03/
 ```
 
+### Day 04 — Zapier & AI Agent Automation (MCP)
+
+Completion of seven Zapier Academy certifications covering Zaps, AI Agents, and the Model Context Protocol (MCP).
+
+Detailed work is available in:
+
+```text
+Day-04/
+```
+
 ---
 
 ## 🚀 Practical Approach
