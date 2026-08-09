@@ -1,0 +1,48 @@
+OPEN SOURCE REPOSITORY
+
+Repository selected for contribution: awesome-n8n-templates
+Owner/Maintainer      : Enes Cingoz (enescingoz)
+Repository URL        : https://github.com/enescingoz/awesome-n8n-templates
+License               : Creative Commons Attribution 4.0 International (CC-BY-4.0)
+Primary Language      : JSON (n8n workflow exports) + Markdown
+
+What the project is:
+A curated, community-maintained collection of 280+ ready-to-import n8n
+automation workflow templates, organized into category folders such as
+Gmail_and_Email_Automation, OpenAI_and_LLMs, Google_Drive_and_Google_Sheets,
+Telegram, WhatsApp, Slack, Discord, WordPress, and others. Each category is
+indexed in README.md as a table of template name, description, department,
+and a relative link to the corresponding JSON file. The repository is one
+of the most active n8n template collections on GitHub and accepts
+contributions of both new templates and documentation fixes.
+
+Why this repository was chosen:
+- Actively maintained, with regular merges and a clear CONTRIBUTING.md,
+  making it a realistic target for practicing a full open-source
+  contribution workflow (fork -> branch -> fix -> PR).
+- Large enough (280+ templates, README content translated into 14
+  languages) that real, non-trivial issues exist to find and fix.
+- Directly relevant to the internship's focus on n8n and workflow
+  automation, so reviewing the codebase also builds domain knowledge.
+
+Issue identified before contributing:
+While reviewing README.md, several "Link to Template" entries pointed to
+files whose names contain literal parentheses, e.g.
+"AI (55 supported languages).json". In Markdown link syntax
+[text](path), an unescaped ")" inside the path closes the link early, so
+nine such links were silently truncated and returned 404 when clicked.
+One additional link (Glasp Highlights Auto Export) used a hardcoded
+absolute URL back to the upstream repo instead of a relative path, which
+meant the link broke for anyone browsing a fork instead of the original.
+
+Contribution workflow followed:
+1. Forked the repository to a personal GitHub account.
+2. Created a dedicated branch for the fix.
+3. Percent-encoded the parentheses (%28 / %29) in the nine affected
+   links to match the encoding convention already used elsewhere in the
+   file, and converted the hardcoded absolute link to a relative path.
+4. Committed, pushed, and opened a Pull Request against the upstream
+   main branch.
+
+See also: "Fork Repository Link.txt" and "Pull Request Link.txt" for the
+fork details and the resulting PR submitted upstream.

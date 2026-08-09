@@ -1,0 +1,38 @@
+GOOGLE SHEET
+
+Sheet URL   : https://docs.google.com/spreadsheets/d/1Ik-qksaqxSDfQezvn6x47mMFd_L0x84QLUTQcAIqnnI/edit?usp=sharing
+Used in     : Day-03 — Lead Management API (n8n workflow)
+Access      : Connected via a Google Sheets OAuth2 credential inside n8n
+              (see Day-03/n8n/Lead Management API.json)
+
+Purpose:
+Acts as the data store for a small Lead Management API built entirely
+in n8n. Four webhook-triggered flows (Create, Get All, Update, Delete)
+read from and write to this sheet in place of a traditional database,
+so it doubles as both the storage layer and the human-readable record
+of every lead captured during testing.
+
+Columns:
+  Name | Email | Phone | Company | Interest | Created At
+
+How each workflow uses the sheet:
+- Create Lead Webhook  -> normalizes the incoming payload, validates
+  that name and email are present, then appends a new row (Append Row).
+- Get Leads Webhook     -> reads all rows (Read Rows) and returns them
+  as the API response.
+- Update Lead Webhook   -> looks up the target row (Find Row) by a
+  matching email, then overwrites it (Update Row).
+- Delete Lead Webhook   -> looks up the target row (Find Row) by email
+  and removes it (Delete Row).
+
+Verification performed:
+Each operation was exercised from Postman (see Day-03/Postman/) and the
+resulting row-level changes were confirmed directly in this sheet,
+captured in the screenshots under Day-03/Google Sheets/Screenshots/
+(Create Lead Record.png, Update Lead Record.png, Delete Lead Record.png).
+
+Related files:
+  Day-03/n8n/Lead Management API.json             — the n8n workflow
+  Day-03/Postman/MATalogics Lead Management API.postman_collection.json
+                                                    — request collection used to test it
+  Day-03/Report/Day-03 Report.docx                 — write-up of the exercise

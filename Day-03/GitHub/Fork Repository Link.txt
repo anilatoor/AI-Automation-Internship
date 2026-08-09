@@ -1,0 +1,41 @@
+FORK REPOSITORY
+
+Fork URL              : https://github.com/anilatoor/awesome-n8n-templates
+Upstream (source) repo: https://github.com/enescingoz/awesome-n8n-templates
+Branch created         : feature/my-improvement
+Purpose of this branch : Fix nine broken "Link to Template" entries in
+                          README.md caused by unescaped parentheses in
+                          filenames, plus one hardcoded absolute link.
+
+Why a fork was needed:
+Write access to enescingoz/awesome-n8n-templates is restricted to the
+maintainer, so the standard GitHub contribution model was followed:
+fork the repository into a personal account, make the change on a
+feature branch there, and propose it back via Pull Request rather than
+pushing directly to upstream.
+
+Local setup:
+  git clone https://github.com/anilatoor/awesome-n8n-templates.git
+  cd awesome-n8n-templates
+  git checkout -b feature/my-improvement
+
+Change made on this branch:
+  README.md — percent-encoded parentheses in nine template links
+  (%28 / %29) so they resolve correctly instead of truncating at the
+  first unescaped ")", and replaced a hardcoded absolute link
+  (pointing at the upstream repo) with a relative path so it also
+  resolves correctly from a fork.
+
+Commit and push:
+  git add README.md
+  git commit -m "docs: fix broken template links with unescaped parentheses"
+  git push origin feature/my-improvement
+
+Keeping the fork in sync (used before starting the fix, to branch off
+an up-to-date main):
+  git remote add upstream https://github.com/enescingoz/awesome-n8n-templates.git
+  git fetch upstream
+  git merge upstream/main
+
+Result: the branch was pushed to the fork and used as the source branch
+for the Pull Request described in "Pull Request Link.txt".

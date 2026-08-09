@@ -1,0 +1,39 @@
+PULL REQUEST
+
+PR URL      : https://github.com/enescingoz/awesome-n8n-templates/pull/178
+Target repo : enescingoz/awesome-n8n-templates
+Base branch : main
+Head branch : anilatoor:feature/my-improvement
+Title       : docs: fix broken template links with unescaped parentheses
+
+Summary of the change:
+Nine "Link to Template" entries in README.md pointed to filenames
+containing literal, unescaped parentheses (e.g. "AI (55 supported
+languages).json"). Because Markdown link syntax [text](path) treats the
+first unmatched ")" as the end of the link, these links were silently
+truncated and returned a 404 when clicked. This PR percent-encodes the
+parentheses (%28 / %29) in the affected paths, matching the convention
+already used for every other filename with special characters elsewhere
+in the same table. It also fixes the "Glasp Highlights Auto Export" link,
+which used a hardcoded absolute URL pointing back at the upstream repo
+instead of a relative path — meaning the link broke for anyone browsing
+the README from a fork rather than the original repository.
+
+Files changed:
+  README.md   (9 insertions, 9 deletions)
+
+Testing performed:
+- Verified each corrected link resolves to the correct file by opening
+  the encoded path directly on GitHub.
+- Confirmed the relative-path fix renders correctly both on the
+  upstream repo and on a personal fork, where the previous hardcoded
+  link would have 404'd.
+- No workflow JSON files were modified — documentation only.
+
+Status: Open, awaiting maintainer review as of 2026-08-09.
+
+This PR follows the process described in CONTRIBUTING.md: fork the
+repository, make the change on a feature branch, and submit a Pull
+Request with a clear title and description. See "Open Source
+Repository Link.txt" for the source project and "Fork Repository
+Link.txt" for how the branch was created and pushed.

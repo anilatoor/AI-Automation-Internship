@@ -1,0 +1,179 @@
+{
+  "info": {
+    "_postman_id": "6d421464-6778-44d2-9b4e-d7bc5bf68548",
+    "name": "MATalogics Lead Management API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "57210901",
+    "_collection_link": "https://go.postman.co/collection/57210901-6d421464-6778-44d2-9b4e-d7bc5bf68548?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Create Lead",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"name\": \"Muhammad Ahmad\",\r\n  \"email\": \"ahmad@gmail.com\",\r\n  \"phone\": \"+923001234567\",\r\n  \"company\": \"MATalogics\",\r\n  \"interest\": \"AI Automation\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/create-lead",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "create-lead"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Leads",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"title\": \"MATalogics Internship\",\r\n    \"body\": \"Learning API automation using Postman\",\r\n    \"userId\": 1\r\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/get-leads",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "get-leads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Lead",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"name\": \"Ali Ahmad\",\r\n  \"email\": \"ahmad@gmail.com\",\r\n  \"phone\": \"+923111111111\",\r\n  \"company\": \"MATalogics Pvt Ltd\",\r\n  \"interest\": \"AI Agents\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/update-lead",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "update-lead"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Lead",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"email\": \"ahmad@gmail.com\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/delete-lead",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "delete-lead"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": ""
+    }
+  ]
+}

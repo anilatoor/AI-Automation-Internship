@@ -1,4 +1,3 @@
-
 # AI Automation Internship
 
 ## No-Code & Low-Code Systems Engineering
@@ -71,16 +70,16 @@ Each day's folder contains the relevant practical work, documentation, screensho
 
 ### Day 01
 
-Orientation, Meeting for guidance about learning and introductory activities related to AI automation and system engineering Internship
+Orientation and an introductory meeting covering guidance on learning goals and initial activities related to the AI Automation and System Engineering Internship.
 
 ### Day 02
 
-Completion of industry-recognized certifications and courses to strengthen understanding of Artificial Intelligence. These includes 
+Completion of industry-recognized certifications and courses to strengthen understanding of Artificial Intelligence. These include:
 
 1. Model Context Protocol (MCP) Course by Anthropic
 2. AI Fluency: Framework & Foundations by Anthropic
 3. Introduction to Agent Skills by Anthropic
-3. HubSpot AI for Marketers
+4. HubSpot AI for Marketers
 
 ### Day 03 — Git, GitHub, APIs, Postman & n8n
 
