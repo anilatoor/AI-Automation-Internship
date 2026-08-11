@@ -14,34 +14,36 @@ The objective of this internship is to develop practical skills in designing, bu
 
 Key areas of learning include:
 
-* AI Automation
+* AI Automation & AI Fluency
 * No-Code & Low-Code System Engineering
-* Workflow Automation
+* Workflow Automation (n8n & Zapier)
 * AI Agents & Agentic AI
 * APIs & API Integrations
-* n8n / Zapier
-* Postman
-* Git & GitHub
-* RAG (Retrieval-Augmented Generation)
-* MCP (Model Context Protocol)
+* Git & GitHub, including open-source contribution
+* Postman & REST API testing
+* MCP (Model Context Protocol) — usage & governance
+* Team Communication & Data Tooling (Slack, Notion)
 * Business Process Automation
 * System Integration
+* Error Handling & Observability
 * Testing and Documentation
 
 ---
 
 ## 🛠️ Technologies & Tools
 
-| Area                 | Technologies / Tools             |
-| -------------------- | -------------------------------- |
-| Workflow Automation  | n8n / Zapier                     |
-| API Testing          | Postman                          |
-| Version Control      | Git, GitHub                      |
-| Data Storage         | Google Sheets / Vector Databases |
-| AI Automation        | AI Agents, LLM-based workflows   |
-| Integration          | REST APIs, Webhooks              |
-| Knowledge Systems    | RAG                              |
-| Development Approach | No-Code / Low-Code               |
+| Area                 | Technologies / Tools                                                 |
+| -------------------- | -------------------------------------------------------------------- |
+| Workflow Automation  | n8n, Zapier                                                          |
+| AI Agents & MCP      | Zapier AI Agents, Model Context Protocol (MCP), Anthropic MCP Course |
+| API Testing          | Postman                                                              |
+| Version Control      | Git, GitHub                                                          |
+| Data Storage         | Google Sheets, Notion databases                                      |
+| Team Communication   | Slack (bots, scoped tokens, channel automation)                      |
+| Integration          | REST APIs, Webhooks                                                  |
+| AI Automation        | AI Agents, LLM-based workflows                                       |
+| Knowledge Systems    | RAG (Retrieval-Augmented Generation)                                 |
+| Development Approach | No-Code / Low-Code                                                   |
 
 ---
 
@@ -112,6 +114,23 @@ Detailed work is available in:
 
 ```text
 Day-04/
+```
+
+### Day 05 — Slack & Notion + n8n Automation
+
+Day 05 moved from single-tool automations into connecting tools together — Slack for team notifications, Notion as the structured data source, and n8n as the glue running three real, end-to-end workflows:
+
+* Slack fundamentals — workspace, channels, threads, DMs, a scoped bot app
+* Notion fundamentals — pages, blocks, databases, properties, views, and integration sharing
+* Connecting n8n to Slack & Notion — credentials, authentication, dynamic channel/database selection
+* Mapping live trigger data into Slack messages and Notion pages instead of hardcoded text
+* Error handling & observability — routing a deliberate workflow failure to a dedicated Slack alert channel
+* Three working workflows: Task → Slack alert, Client Onboarding → Slack channel + announcement, Google Form → Sheets → Notion student registration
+
+Detailed work is available in:
+
+```text
+Day-05/
 ```
 
 ---
