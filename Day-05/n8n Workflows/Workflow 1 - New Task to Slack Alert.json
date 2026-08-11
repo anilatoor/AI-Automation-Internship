@@ -1,0 +1,92 @@
+{
+  "name": "Workflow 1 - New Task to Slack Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "3b88ae69-afdc-80fb-85ea-000b6216a198",
+          "cachedResultName": "Tasks"
+        }
+      },
+      "id": "ce07ffcb-dd85-43fd-90c9-f2d8353230a3",
+      "name": "New Task in Notion",
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "BgevGZ6wQHxCU5ms",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "n8n-alerts"
+        },
+        "text": "=🆕 *New Task Created*\n*Task:* {{ $json[\"Task Name\"] }}\n*Status:* {{ $json.Status }}\n*Priority:* {{ $json.Priority }}\n*Due:* {{ $json[\"Due Date\"] ? $json[\"Due Date\"].start.split('T')[0] : \"—\" }}",
+        "otherOptions": {}
+      },
+      "id": "36617214-451d-468f-9d30-26f8b9341a6f",
+      "name": "Notify n8n-alerts",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        224,
+        0
+      ],
+      "webhookId": "1aedafb3-c293-45dd-8bab-995bf3f54c5b",
+      "credentials": {
+        "slackApi": {
+          "id": "g6OlX1yYpKfZ87BP",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "New Task in Notion": {
+      "main": [
+        [
+          {
+            "node": "Notify n8n-alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "cd92e923-7bc2-4774-b4f9-3752596340a3",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "b4d163fe1103871bc186de97bfdb525f540843a7806f36bb6a22b8bfb63c5d84"
+  },
+  "nodeGroups": [],
+  "id": "4ATa1ywLp7qslnnV",
+  "tags": []
+}

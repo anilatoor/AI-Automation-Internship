@@ -1,0 +1,161 @@
+{
+  "name": "Workflow 2- Client Onboarding",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "3b88ae69-afdc-803b-8263-000bfa0deb6e",
+          "cachedResultName": "Clients"
+        }
+      },
+      "id": "831bd49e-1ab7-44b9-8682-cc6de9f94a9a",
+      "name": "New Client in Notion",
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "BgevGZ6wQHxCU5ms",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "client-updates"
+        },
+        "text": "=🎉 *New Client Onboarded!*\n*Client:* {{ $(\"New Client in Notion\").item.json.Name }}\n*Company:* {{ $(\"New Client in Notion\").item.json.Company }}\n*Status:* {{ $(\"New Client in Notion\").item.json.Status }}\nDedicated channel: #client-{{ $(\"New Client in Notion\").item.json.Name.toLowerCase().replace(/[^a-z0-9]+/g, \"-\").replace(/^-+|-+$/g, \"\") }}",
+        "otherOptions": {}
+      },
+      "id": "92742926-e823-43d7-862c-1eb13a1a3cf8",
+      "name": "Announce in client-updates",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        464,
+        -16
+      ],
+      "webhookId": "1dfbd418-36ed-4b84-8c89-b837b4006421",
+      "credentials": {
+        "slackApi": {
+          "id": "g6OlX1yYpKfZ87BP",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "channel",
+        "channelId": "=client-{{ $json.Name.toLowerCase().replace(/[^a-z0-9]+/g, \"-\").replace(/^-+|-+$/g, \"\") }}"
+      },
+      "id": "035de848-4b1b-421e-9e93-99118cffa1ca",
+      "name": "Create Client Channel",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        224,
+        0
+      ],
+      "webhookId": "469e7919-17b7-4e42-86d4-e44e0a00da01",
+      "credentials": {
+        "slackApi": {
+          "id": "g6OlX1yYpKfZ87BP",
+          "name": "Slack account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "workflow-errors"
+        },
+        "text": "=🚨 *Workflow Failed*\n*Workflow:* {{ $workflow.name }}\n*Error:* {{ $json.error?.message || $json.error || \"Unknown error\" }}\n*When:* {{ $now.toFormat(\"dd LLL yyyy, HH:mm\") }}\n<{{ $execution.id ? \"https://anila092.app.n8n.cloud/workflow/\" + $workflow.id + \"/executions/\" + $execution.id : \"https://anila092.app.n8n.cloud/workflow/\" + $workflow.id }}|View execution>",
+        "otherOptions": {}
+      },
+      "id": "ffe704e4-4839-40f9-940d-d87742342878",
+      "name": "Post to workflow-errors",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        480,
+        208
+      ],
+      "webhookId": "c01d7ee0-8d91-43aa-ae4e-b79cca2bd986",
+      "credentials": {
+        "slackApi": {
+          "id": "g6OlX1yYpKfZ87BP",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "New Client in Notion": {
+      "main": [
+        [
+          {
+            "node": "Create Client Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Client Channel": {
+      "main": [
+        [
+          {
+            "node": "Announce in client-updates",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post to workflow-errors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "saveManualExecutions": true
+  },
+  "versionId": "816e598b-3abe-4d04-a8bd-e60f3bfc53dc",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b4d163fe1103871bc186de97bfdb525f540843a7806f36bb6a22b8bfb63c5d84"
+  },
+  "nodeGroups": [],
+  "id": "5nPveGK91aXRe00H",
+  "tags": []
+}

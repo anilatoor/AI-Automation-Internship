@@ -1,0 +1,120 @@
+{
+  "name": "Workflow 3 - n8n + Notion (Student Registrations)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1pnURo6JpYrYLfp6Y90X6t5hK3tdyZgKfPw1-EQzGOCQ",
+          "mode": "list",
+          "cachedResultName": "Student Registration (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pnURo6JpYrYLfp6Y90X6t5hK3tdyZgKfPw1-EQzGOCQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1871265127,
+          "mode": "list",
+          "cachedResultName": "Form responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pnURo6JpYrYLfp6Y90X6t5hK3tdyZgKfPw1-EQzGOCQ/edit#gid=1871265127"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "id": "548eeba6-f95e-4e2e-b5ce-735d625c0331",
+      "name": "New Form Response",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "dTUMftVD6QwVTEVR",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "3b88ae69-afdc-8090-9ed5-c0fdad2d1adc",
+          "mode": "list",
+          "cachedResultName": "Students",
+          "cachedResultUrl": "https://app.notion.com/p/3b88ae69afdc80909ed5c0fdad2d1adc"
+        },
+        "title": "={{ $json.Name }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Email|email",
+              "emailValue": "={{ $json.Email }}"
+            },
+            {
+              "key": "Course|rich_text",
+              "textContent": "={{ $json.Course }}"
+            },
+            {
+              "key": "Status|status",
+              "statusValue": "={{ $json.Status }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "143d8b2c-7a4c-4a29-8d4d-6bf89c8760cf",
+      "name": "Create Student in Notion",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "BgevGZ6wQHxCU5ms",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "New Form Response": {
+      "main": [
+        [
+          {
+            "node": "Create Student in Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "a650c2e6-7bfe-4b7e-9965-d3635369e073",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b4d163fe1103871bc186de97bfdb525f540843a7806f36bb6a22b8bfb63c5d84"
+  },
+  "nodeGroups": [],
+  "id": "BIUKncoVwAHprwtj",
+  "tags": []
+}
