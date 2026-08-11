@@ -58,6 +58,8 @@ Screenshots/
 └── Google Sheet Students Registerations.png
 ```
 
+For anyone new to either tool, [Learning Notes/Slack.md](<Learning%20Notes/Slack.md>) and [Learning Notes/Notion.md](<Learning%20Notes/Notion.md>) walk through the core concepts (workspace, channels, threads, databases, views, integrations, etc.) with links to where each one shows up in this build.
+
 ---
 
 ## 🌟 The Takeaway
