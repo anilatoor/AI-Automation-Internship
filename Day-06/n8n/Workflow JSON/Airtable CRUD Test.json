@@ -1,0 +1,369 @@
+{
+  "name": "Airtable CRUD Test",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "34b6c5a7-e10d-44f9-93d4-361d4975bdd5",
+      "name": "Start CRUD Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appkRlnK7SWRD4Y6Z",
+          "mode": "list",
+          "cachedResultName": "MATalogics AI Operations Base ",
+          "cachedResultUrl": "https://airtable.com/appkRlnK7SWRD4Y6Z"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblPMCRzYQf5wIgc4",
+          "mode": "list",
+          "cachedResultName": "Interns",
+          "cachedResultUrl": "https://airtable.com/appkRlnK7SWRD4Y6Z/tblPMCRzYQf5wIgc4"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Department": "HR",
+            "Intern Name": "Atif",
+            "Task Count": 17,
+            "Performance Score": 85
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Intern Name",
+              "displayName": "Intern Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Department",
+              "displayName": "Department",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Sales",
+                  "value": "Sales"
+                },
+                {
+                  "name": "Marketing",
+                  "value": "Marketing"
+                },
+                {
+                  "name": "Automation",
+                  "value": "Automation"
+                },
+                {
+                  "name": "Finance",
+                  "value": "Finance"
+                },
+                {
+                  "name": "Development",
+                  "value": "Development"
+                },
+                {
+                  "name": "Support",
+                  "value": "Support"
+                },
+                {
+                  "name": "Admin",
+                  "value": "Admin"
+                },
+                {
+                  "name": "Management",
+                  "value": "Management"
+                },
+                {
+                  "name": "HR",
+                  "value": "HR"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Task Count",
+              "displayName": "Task Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Performance Score",
+              "displayName": "Performance Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Assigned Projects",
+              "displayName": "Assigned Projects",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Supervisor",
+              "displayName": "Supervisor",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "4c8a62a6-e5ef-4cd5-be38-b157adab56a9",
+      "name": "Create Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "FLDaEUsZhFd9mbBZ",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appkRlnK7SWRD4Y6Z",
+          "mode": "list",
+          "cachedResultName": "MATalogics AI Operations Base ",
+          "cachedResultUrl": "https://airtable.com/appkRlnK7SWRD4Y6Z"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblPMCRzYQf5wIgc4",
+          "mode": "list",
+          "cachedResultName": "Interns",
+          "cachedResultUrl": "https://airtable.com/appkRlnK7SWRD4Y6Z/tblPMCRzYQf5wIgc4"
+        },
+        "filterByFormula": "={{ \"RECORD_ID()='\" + $('Create Record').item.json.id + \"'\" }}",
+        "options": {}
+      },
+      "id": "bf97a355-ecd0-4a67-bb04-8bbd66af18df",
+      "name": "Search Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        0
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "FLDaEUsZhFd9mbBZ",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "cachedResultName": "MATalogics AI Operations Base ",
+          "mode": "list",
+          "value": "appkRlnK7SWRD4Y6Z"
+        },
+        "table": {
+          "__rl": true,
+          "cachedResultName": "Interns",
+          "mode": "list",
+          "value": "tblPMCRzYQf5wIgc4"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "defaultMatch": true,
+              "display": true,
+              "displayName": "id",
+              "id": "id",
+              "readOnly": true,
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Performance Score",
+              "id": "Performance Score",
+              "readOnly": false,
+              "removed": false,
+              "required": false,
+              "type": "number"
+            }
+          ],
+          "value": {
+            "Performance Score": 95,
+            "id": "={{ $json.id }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "f934bce1-f87e-47ac-8e3c-4834a15b6a8e",
+      "name": "Update Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        0
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "FLDaEUsZhFd9mbBZ",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteRecord",
+        "base": {
+          "__rl": true,
+          "cachedResultName": "MATalogics AI Operations Base ",
+          "mode": "list",
+          "value": "appkRlnK7SWRD4Y6Z"
+        },
+        "table": {
+          "__rl": true,
+          "cachedResultName": "Interns",
+          "mode": "list",
+          "value": "tblPMCRzYQf5wIgc4"
+        },
+        "id": "={{ $json.id }}"
+      },
+      "id": "99b7a128-7866-40d6-bdac-5f041df78827",
+      "name": "Delete Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        0
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "FLDaEUsZhFd9mbBZ",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start CRUD Test": {
+      "main": [
+        [
+          {
+            "node": "Create Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Record": {
+      "main": [
+        [
+          {
+            "node": "Search Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Record": {
+      "main": [
+        [
+          {
+            "node": "Update Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Record": {
+      "main": [
+        [
+          {
+            "node": "Delete Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b6ab4c96-b7f9-4af7-8005-4b9e938ea72a",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "b4d163fe1103871bc186de97bfdb525f540843a7806f36bb6a22b8bfb63c5d84"
+  },
+  "nodeGroups": [],
+  "id": "JzXKI5TRmkCJOwo4",
+  "tags": []
+}

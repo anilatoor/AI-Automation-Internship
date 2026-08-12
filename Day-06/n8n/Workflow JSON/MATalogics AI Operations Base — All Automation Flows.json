@@ -1,0 +1,628 @@
+{
+  "name": "MATalogics AI Operations Base — All Automation Flows",
+  "nodes": [
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "leads"
+        },
+        "text": "=🟢 *New Lead!*\nName: {{ $json.fields[\"Lead Name\"] }}\nSource: {{ $json.fields[\"Source\"] }}\nService: {{ $json.fields[\"Interested Service\"] }}\nContact: {{ $json.fields[\"Contact Number\"] }}",
+        "otherOptions": {}
+      },
+      "id": "3b64f551-78e1-46f3-aca8-85c816cba613",
+      "name": "Slack: New Lead",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        224,
+        -560
+      ],
+      "webhookId": "134c9645-8ffe-4aa0-a596-3ab7cfa2e4c5",
+      "credentials": {
+        "slackApi": {
+          "id": "g6OlX1yYpKfZ87BP",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 🟢 Workflow 1: Lead Management\nNew Lead in Airtable → n8n → Send Slack Notification\n\nPolls the **Leads** table for new records and posts an alert to the sales Slack channel.",
+        "height": 296,
+        "width": 796,
+        "color": 4
+      },
+      "id": "636524ca-0984-4590-8dcc-6d5424b7a0f8",
+      "name": "Sticky Note 2ab1dd61",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        -704
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableTokenApi",
+        "baseId": {
+          "__rl": true,
+          "value": "appkRlnK7SWRD4Y6Z",
+          "mode": "id"
+        },
+        "tableId": {
+          "__rl": true,
+          "value": "tblIHLuTaIbHu5JbE",
+          "mode": "id"
+        },
+        "triggerField": "Created",
+        "additionalFields": {}
+      },
+      "id": "07a82941-a9a1-4f9b-ba2a-62d84e5aeb6f",
+      "name": "New Client (Clients)",
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        -240
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "FLDaEUsZhFd9mbBZ",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "client-id",
+              "name": "clientId",
+              "value": "=CL-{{ String($json.id).slice(-4).toUpperCase() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "dca415be-e10a-489c-92b7-61ac1a338fc4",
+      "name": "Generate Client ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": " client-updates",
+          "mode": "name"
+        },
+        "text": "=🔵 *New Client Onboarded!*\nClient ID: {{ $json.clientId }}\nName: {{ $json.fields[\"Name\"] }}\nCompany: {{ $json.fields[\"Company\"] }}\nEmail: {{ $json.fields[\"Email\"] }}",
+        "otherOptions": {}
+      },
+      "id": "2050a4b6-0187-4086-b897-9180d3ec8306",
+      "name": "Notify Team: Client",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        544,
+        -240
+      ],
+      "webhookId": "16ccfe2c-8a63-4749-bb17-c3a3e49d58d7",
+      "credentials": {
+        "slackApi": {
+          "id": "g6OlX1yYpKfZ87BP",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 🔵 Workflow 2: Client Onboarding\nAirtable Record Created → Generate Client ID → Notify Team\n\nWhen a new client row appears, build a Client ID (CL-xxxx) and announce it to the team channel.",
+        "height": 312,
+        "width": 1020,
+        "color": 5
+      },
+      "id": "998a2772-0569-419f-9194-85f37e03b2ae",
+      "name": "Sticky Note 070bdffb",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        -400
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableTokenApi",
+        "baseId": {
+          "__rl": true,
+          "value": "appkRlnK7SWRD4Y6Z",
+          "mode": "id"
+        },
+        "tableId": {
+          "__rl": true,
+          "value": "tblcEGmTZBdhBGRX7",
+          "mode": "id"
+        },
+        "triggerField": "Last Modified",
+        "additionalFields": {}
+      },
+      "id": "8f94ec08-1e17-4fbe-be85-d495f19bf4cf",
+      "name": "Project Status Changed",
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        80
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "FLDaEUsZhFd9mbBZ",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "anila.toor@gmail.com",
+        "subject": "=Project Status Update: {{ $json.fields[\"Project Name\"] }}",
+        "emailType": "text",
+        "message": "=Project \"{{ $json.fields[\"Project Name\"] }}\" is now: {{ $json.fields[\"Status\"] }}\nAssigned To: {{ $json.fields[\"Assigned To\"] }}\nDeadline: {{ $json.fields[\"Deadline\"] }}",
+        "options": {}
+      },
+      "id": "dfc8cd47-f28e-430d-9091-34375f05d37e",
+      "name": "Email: Project Update",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        80
+      ],
+      "webhookId": "415a3397-a99b-45c7-938a-6ebdab1971bc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qxyKyX2A44FiHBsN",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 🟠 Workflow 3: Project Tracking\nProject Status Changed → Send Email Notification\n\nWatches the **Projects** table (Last Modified) and emails a status-change notification.",
+        "height": 296,
+        "width": 780,
+        "color": 3
+      },
+      "id": "74e5cfe0-760d-4297-84dd-7c4ab741b839",
+      "name": "Sticky Note 718c83e1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableTokenApi",
+        "baseId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appkRlnK7SWRD4Y6Z",
+          "cachedResultName": "MATalogics AI Operations Base"
+        },
+        "tableId": {
+          "__rl": true,
+          "value": "tblCQBmkz1ESjgC2x",
+          "mode": "id"
+        },
+        "triggerField": "Last Updated",
+        "additionalFields": {}
+      },
+      "id": "7d3bc49d-e556-4e3f-8afc-c3692eca5977",
+      "name": "AI Agent Status Updated",
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        400
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "FLDaEUsZhFd9mbBZ",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "ai-agents-updates",
+          "mode": "name"
+        },
+        "text": "=🟣 *AI Agent Status Update*\nAgent: {{ $json.fields[\"Agent Name\"] }}\nType: {{ $json.fields[\"Type\"] }}\nDeployment: {{ $json.fields[\"Deployment Status\"] }}\nUpdated: {{ $json.fields[\"Last Updated\"] }}",
+        "otherOptions": {}
+      },
+      "id": "ab2f1939-9367-48c9-a2ae-808794e08b71",
+      "name": "Notify Ops: Agent",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        224,
+        400
+      ],
+      "webhookId": "e4e6f60d-1a4a-43d3-b65a-69e76f53c390",
+      "credentials": {
+        "slackApi": {
+          "id": "g6OlX1yYpKfZ87BP",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 🟣 Workflow 4: AI Agent Monitoring\nAI Agent Status Updated → Notify Operations Team\n\nMonitors the **AI Agents** table for deployment-status changes and pings the ops Slack channel.",
+        "height": 296,
+        "width": 780,
+        "color": 6
+      },
+      "id": "d5070677-e04a-41cf-b84a-efc56ef1b22e",
+      "name": "Sticky Note a0262434",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableTokenApi",
+        "baseId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appkRlnK7SWRD4Y6Z",
+          "cachedResultName": "MATalogics AI Operations Base"
+        },
+        "tableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblPMCRzYQf5wIgc4",
+          "cachedResultName": "Interns"
+        },
+        "triggerField": "Last Modified",
+        "additionalFields": {
+          "formula": ""
+        }
+      },
+      "id": "00e379b9-24d8-4da5-a1fb-15794ff02dd6",
+      "name": "Task Completed",
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        752
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "FLDaEUsZhFd9mbBZ",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 🟡 Workflow 5: Internship Tracker\nTask Completed → n8n calculates Performance Score → Update Airtable\n\nWhen an intern record changes, n8n computes Performance Score = round(Completed ÷ Task Count × 100) and writes it back to the **Interns** table.",
+        "height": 328,
+        "width": 988,
+        "color": 2
+      },
+      "id": "a4eb48e5-f01e-4c06-8777-b7458832cf99",
+      "name": "Sticky Note 7096ce12",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableTokenApi",
+        "baseId": {
+          "__rl": true,
+          "cachedResultName": "MATalogics AI Operations Base",
+          "mode": "id",
+          "value": "appkRlnK7SWRD4Y6Z"
+        },
+        "tableId": {
+          "__rl": true,
+          "cachedResultName": "Leads",
+          "mode": "id",
+          "value": "tblbb4hzADgYFjS11"
+        },
+        "triggerField": "Created",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        -560
+      ],
+      "id": "7dc37287-3841-491f-a191-412cccb91327",
+      "name": "New Lead (Leads)",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "FLDaEUsZhFd9mbBZ",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "perf-score",
+              "name": "newScore",
+              "type": "number",
+              "value": "={{ ($json.fields[\"Task Count\"] > 0) ? Math.round(($json.fields[\"Completed\"] / $json.fields[\"Task Count\"]) * 100) : 0 }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "adfe7b31-d2a0-49fc-a180-57275dd6f689",
+      "name": "Calc Score",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        144,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "cachedResultName": "MATalogics AI Operations Base",
+          "mode": "id",
+          "value": "appkRlnK7SWRD4Y6Z"
+        },
+        "table": {
+          "__rl": true,
+          "cachedResultName": "Interns",
+          "mode": "id",
+          "value": "tblPMCRzYQf5wIgc4"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "value": {
+            "Performance Score": "={{ $json.newScore }}",
+            "id": "={{ $json.id }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "4ff7814e-f147-4772-8857-f1c590478312",
+      "name": "Update Performance Score",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        752
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "FLDaEUsZhFd9mbBZ",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "has-tasks",
+              "leftValue": "={{ $json.fields[\"Task Count\"] || 0 }}",
+              "operator": {
+                "operation": "gt",
+                "type": "number"
+              },
+              "rightValue": 0
+            },
+            {
+              "id": "score-diff",
+              "leftValue": "={{ $json.newScore }}",
+              "operator": {
+                "operation": "notEquals",
+                "type": "number"
+              },
+              "rightValue": "={{ $json.fields[\"Performance Score\"] || 0 }}"
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "99d1d47e-bf0d-4d4b-b9e5-1110a6ae4029",
+      "name": "Has Tasks & Score Changed?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        352,
+        752
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "New Client (Clients)": {
+      "main": [
+        [
+          {
+            "node": "Generate Client ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Client ID": {
+      "main": [
+        [
+          {
+            "node": "Notify Team: Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Project Status Changed": {
+      "main": [
+        [
+          {
+            "node": "Email: Project Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Status Updated": {
+      "main": [
+        [
+          {
+            "node": "Notify Ops: Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Lead (Leads)": {
+      "main": [
+        [
+          {
+            "node": "Slack: New Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Task Completed": {
+      "main": [
+        [
+          {
+            "node": "Calc Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calc Score": {
+      "main": [
+        [
+          {
+            "node": "Has Tasks & Score Changed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Tasks & Score Changed?": {
+      "main": [
+        [
+          {
+            "node": "Update Performance Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "770cc2f4-ff19-4e61-b78e-9fcb2bc9097b",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b4d163fe1103871bc186de97bfdb525f540843a7806f36bb6a22b8bfb63c5d84"
+  },
+  "nodeGroups": [],
+  "id": "EiWtUyGNCHSf0kaS",
+  "tags": []
+}
