@@ -38,7 +38,7 @@ Key areas of learning include:
 | AI Agents & MCP      | Zapier AI Agents, Model Context Protocol (MCP), Anthropic MCP Course |
 | API Testing          | Postman                                                              |
 | Version Control      | Git, GitHub                                                          |
-| Data Storage         | Google Sheets, Notion databases                                      |
+| Data Storage         | Google Sheets, Notion databases, Airtable bases                      |
 | Team Communication   | Slack (bots, scoped tokens, channel automation)                      |
 | Integration          | REST APIs, Webhooks                                                  |
 | AI Automation        | AI Agents, LLM-based workflows                                       |
@@ -131,6 +131,22 @@ Detailed work is available in:
 
 ```text
 Day-05/
+```
+
+### Day 06 — Airtable + n8n Automation
+
+Day 06 introduced **Airtable** as the central database for an AI agency, then connected it to n8n so record changes trigger real notifications — the same trigger → transform → notify/record pattern as Day 05, but with Airtable as the shared source of truth and full CRUD (not just reads) driving the automations:
+
+* Airtable fundamentals — bases, tables, records, fields, views, interfaces, automations
+* Database design — 5 tables (Clients, Projects, Leads, AI Agents, Interns) built to a fixed schema, each with sample data and a second view (Kanban/Calendar/Gallery/Form)
+* Airtable + n8n integration — Personal Access Token credential, all 4 CRUD operations (Create, Search, Update, Delete) tested in one chained workflow before anything else was built
+* Five working, end-to-end workflows: Lead → Slack alert, Client Onboarding → generate Client ID → Slack, Project Status change → Gmail, AI Agent Status change → Slack, Task Completed → recalculate & write back Performance Score
+* Practical assignment — the 5 tables + 5 workflows together form a working Client / Lead / Project / Internship / AI Agent tracking system
+
+Detailed work is available in:
+
+```text
+Day-06/
 ```
 
 ---
