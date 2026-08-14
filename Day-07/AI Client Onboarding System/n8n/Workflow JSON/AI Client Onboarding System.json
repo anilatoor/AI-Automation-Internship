@@ -1,0 +1,625 @@
+{
+  "name": "AI Client Onboarding System",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "c44a6508-1780-4308-8c8e-b89826bd0721",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "52d6c56f-b2ac-4f90-a0f2-f9bfb623b61a",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        576
+      ],
+      "webhookId": "client-onboarding"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Handle both n8n test shape ({body:{...}}) and raw Vapi POST ({message:{...}})\nconst payload = $input.first().json;\nconst body = payload.body ?? payload;\n\nconst message = body.message ?? {};\nconst toolCall = (message.toolCallList && message.toolCallList[0])\n  ?? (message.toolCalls && message.toolCalls[0])\n  ?? {};\n\n// Vapi may send function.arguments as a JSON STRING or an object.\nconst rawArgs = toolCall.function?.arguments ?? {};\nlet args = {};\ntry {\n  args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : (rawArgs || {});\n} catch (e) {\n  args = {};\n}\n\n// Accept BOTH naming conventions (long prompt names and short schema names).\nconst pick = (...keys) => {\n  for (const k of keys) {\n    const v = args[k];\n    if (v !== undefined && v !== null && String(v).trim() !== '') return v;\n  }\n  return undefined;\n};\n\nconst str = v => (v === undefined || v === null) ? '' : String(v).trim();\n\nconst rawBudget = pick('budget_pkr', 'budget');\n\nreturn [{\n  json: {\n    toolCallId: toolCall.id || '',\n    client_name: str(pick('client_name', 'name')),\n    company: str(pick('company_name', 'company')),\n    email: str(pick('email')),\n    service: str(pick('service_required', 'service')),\n    description: str(pick('project_description', 'description')),\n    budget: (rawBudget === undefined) ? null : Number(rawBudget),\n  }\n}];"
+      },
+      "id": "11ce8a05-049a-4fae-81fe-250a57959dc4",
+      "name": "Normalize intake",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"gpt-4o-mini\", response_format: { type: \"json_object\" }, temperature: 0.2, messages: [ { role: \"system\", content: `You are the lead-classification engine for MATalogics, an AI automation agency. You do NOT talk to customers. You read ONE already-collected client intake and do exactly three things, returning them as STRICT JSON only — no markdown, no code fences, no commentary.\\n\\nYou receive: service (what they want built), description (project detail), budget (PKR).\\n\\n1) CLASSIFY — service_category: choose EXACTLY ONE of these canonical values, returned verbatim: \"AI Voice Agent Development\", \"AI Chatbot Development\", \"Workflow Automation\", \"AI Consulting and Strategy\", \"Custom AI Integration\", \"Data / Web Scraping\", \"Other\". Pick the single closest fit from service + description; use \"Other\" only when none reasonably apply.\\n\\n2) CHECK / SUMMARIZE — summary: one third-person sentence (max ~30 words) stating who the client is and what they want built, written for an internal sales rep skimming a Slack alert. No greeting, no fluff, do not restate the budget.\\n\\n3) RECOMMEND — next_action: one short imperative sentence giving the team's immediate next step (e.g. \"Schedule a scoping call to map the required voice call flows and integrations.\").\\n\\nRULES: Base every field ONLY on the provided intake — never invent details, requirements, or numbers. If the description is thin, summarize only what is given. Do NOT output a priority field; priority is computed separately from budget.\\n\\nReturn a single JSON object with EXACTLY these keys: service_category, summary, next_action.` }, { role: \"user\", content: `Service requested: ${$json.service}\\nProject description: ${$json.description}\\nBudget (PKR): ${$json.budget}` } ] }) }}",
+        "options": {}
+      },
+      "id": "6d30599f-f4d3-4c59-b222-502a5effcb15",
+      "name": "AI Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -464,
+        368
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "C6j7blqHkf6bKnue",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Works with either classifier feeding this node:\n// - LangChain AI Agent outputs to $json.output\n// - OpenAI HTTP node outputs to $json.choices[0].message.content\nconst inp = $input.first().json;\nlet raw = inp.output ?? inp.choices?.[0]?.message?.content ?? '';\n\nif (typeof raw !== 'string') raw = JSON.stringify(raw);\n\nraw = raw.trim().replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();\n\nconst ai = JSON.parse(raw);\nreturn [{ json: ai }];"
+      },
+      "id": "9eccd09d-1534-418f-a4d8-bc58051fbb69",
+      "name": "Parse AI output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const intake = $('Normalize intake').first().json;\nconst ai = $input.first().json;\n\nconst budgetNum = (intake.budget === null || intake.budget === undefined || isNaN(Number(intake.budget)))\n  ? null\n  : Number(intake.budget);\n\nlet priority = 'LOW';\nif (budgetNum !== null && budgetNum >= 500000) priority = 'HIGH';\nelse if (budgetNum !== null && budgetNum >= 200000) priority = 'MEDIUM';\n\n// Guarantee a non-empty title source for Notion (title cannot be undefined/empty).\nconst safe = (v, fallback) => {\n  const s = (v === undefined || v === null) ? '' : String(v).trim();\n  return s.length ? s : fallback;\n};\n\nconst client_name = safe(intake.client_name, 'Unknown Client');\nconst company = safe(intake.company, client_name); // title falls back to client, then to a literal below\nconst titleValue = safe(company, safe(client_name, 'Unknown Client'));\n\nreturn [{\n  json: {\n    toolCallId: intake.toolCallId || '',\n    client_name,\n    company,\n    title: titleValue,\n    email: safe(intake.email, ''),\n    service: safe(intake.service, 'Not provided'),\n    description: safe(intake.description, 'Not provided'),\n    budget: budgetNum,\n    budget_display: budgetNum === null ? 'Not provided' : String(budgetNum),\n    category: safe(ai.service_category, 'Other'),\n    priority: priority,\n    summary: safe(ai.summary, 'No summary available.'),\n    next_action: safe(ai.next_action, 'Follow up with the client for missing details.'),\n    status: 'New',\n    created_at: new Date().toISOString(),\n  }\n}];"
+      },
+      "id": "9427f287-0090-4560-a174-5664391a9bfa",
+      "name": "Compute priority + merge",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        576
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "1257cb4b-a6f8-417e-984f-a0dd49f25be3",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        384,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ results: [ { toolCallId: $('Compute priority + merge').first().json.toolCallId, result: \"Client intake submitted successfully - Airtable, Notion, and Slack have been updated.\" } ] }) }}",
+        "options": {}
+      },
+      "id": "aa57c2c7-7c27-4c81-832d-8aac12940b81",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appXKBIZGJthaXIMx",
+          "mode": "list",
+          "cachedResultName": "Vapi AI Client Onboarding",
+          "cachedResultUrl": "https://airtable.com/appXKBIZGJthaXIMx"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblkDj7KGdG9rBrOP",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "https://airtable.com/appXKBIZGJthaXIMx/tblkDj7KGdG9rBrOP"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Budget": "={{ $json.budget }}",
+            "Category": "={{ $json.category }}",
+            "Client Name": "={{ $json.client_name }}",
+            "Company": "={{ $json.company }}",
+            "Description": "={{ $json.description }}",
+            "Email": "={{ $json.email }}",
+            "Priority": "={{ ($json.priority || '').charAt(0) + ($json.priority || '').slice(1).toLowerCase() }}",
+            "Service": "={{ $json.service }}",
+            "Status": "={{ $json.status }}",
+            "Summary": "={{ $json.summary }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Client Name",
+              "displayName": "Client Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Service",
+              "displayName": "Service",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "High",
+                  "value": "High"
+                },
+                {
+                  "name": "Medium",
+                  "value": "Medium"
+                },
+                {
+                  "name": "Low",
+                  "value": "Low"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "In Progress",
+                  "value": "In Progress"
+                },
+                {
+                  "name": "Contacted",
+                  "value": "Contacted"
+                },
+                {
+                  "name": "Closed",
+                  "value": "Closed"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Created",
+              "displayName": "Created",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        176,
+        480
+      ],
+      "id": "d39f9f89-b097-436b-b1a8-405897238eb9",
+      "name": "Create a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "FLDaEUsZhFd9mbBZ",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "dataSourceId": {
+          "__rl": true,
+          "value": "3bb8ae69-afdc-8066-9af1-000b6a04de80",
+          "mode": "list",
+          "cachedResultName": "Clients Projects",
+          "cachedResultUrl": "https://app.notion.com/p/3bb8ae69afdc80068a14ee32b5de1be6"
+        },
+        "title": "={{ $json.title }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Name|title",
+              "title": "={{ $json.title }}"
+            },
+            {
+              "key": "Client|rich_text",
+              "textContent": "={{ $json.client_name }}"
+            },
+            {
+              "key": "Email|email",
+              "emailValue": "={{ $json.email }}"
+            },
+            {
+              "key": "Service|rich_text",
+              "textContent": "={{ $json.service }}"
+            },
+            {
+              "key": "Budget|number",
+              "numberValue": "={{ $json.budget === null ? 0 : $json.budget }}"
+            },
+            {
+              "key": "Priority|select",
+              "selectValue": "={{ ($json.priority || 'LOW').charAt(0) + ($json.priority || 'LOW').slice(1).toLowerCase() }}"
+            },
+            {
+              "key": "Summary|rich_text",
+              "textContent": "={{ $json.summary }}"
+            },
+            {
+              "key": "Next Action|rich_text",
+              "textContent": "={{ $json.next_action }}"
+            },
+            {
+              "key": "Status|select",
+              "selectValue": "={{ $json.status }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        176,
+        672
+      ],
+      "id": "26ee85ed-6c59-4ee2-b4fe-5072867fa52a",
+      "name": "Create a page",
+      "credentials": {
+        "notionApi": {
+          "id": "BgevGZ6wQHxCU5ms",
+          "name": "Notion account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "new-clients",
+          "mode": "name"
+        },
+        "text": "={{ $json.slack_text }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        784,
+        560
+      ],
+      "id": "6924bffe-0bd7-4927-bc3f-70ebad159908",
+      "name": "Send a message",
+      "webhookId": "8c6d09ef-ab5f-44b9-a540-e4c345d31197",
+      "credentials": {
+        "slackApi": {
+          "id": "g6OlX1yYpKfZ87BP",
+          "name": "Slack account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Runs after Airtable + Notion (both may have failed soft via continueRegularOutput).\nconst data = $('Compute priority + merge').first().json;\n\nfunction ok(nodeName, successTest) {\n  try {\n    const out = $(nodeName).first().json;\n    if (out && out.error) return false;\n    return successTest(out);\n  } catch (e) {\n    return false;\n  }\n}\n\nconst airtableOk = ok('Create a record', o => !!(o && (o.id || o.fields)));\nconst notionOk   = ok('Create a page',   o => !!(o && o.id));\n\nconst mark = b => (b ? '\\u2705' : '\\u26a0\\ufe0f');\nconst airtableLine = `${mark(airtableOk)} Airtable ${airtableOk ? 'record created' : 'FAILED'}`;\nconst notionLine   = `${mark(notionOk)} Notion ${notionOk ? 'page created' : 'FAILED'}`;\n\nconst slackText = [\n  `:phone: *New client intake \\u2014 ${data.priority} priority*`,\n  `*Client:* ${data.client_name} (${data.company})`,\n  `*Service:* ${data.category}`,\n  `*Summary:* ${data.summary}`,\n  `*Next action:* ${data.next_action}`,\n  `*Email:* ${data.email}  |  *Budget:* ${data.budget} PKR`,\n  ``,\n  `*Records:*  ${airtableLine}   ${notionLine}`\n].join('\\n');\n\nreturn [{\n  json: {\n    ...data,\n    airtable_ok: airtableOk,\n    notion_ok: notionOk,\n    slack_text: slackText,\n  }\n}];"
+      },
+      "id": "2a68b044-780e-429c-8c85-35c79a8a1d80",
+      "name": "Build status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Service requested: {{ $json.service }}\nProject description: {{ $json.description }}\nBudget (PKR): {{ $json.budget }}",
+        "options": {
+          "systemMessage": "You are the lead-classification engine for MATalogics, an AI automation agency. You do NOT talk to customers. You read ONE already-collected client intake and do exactly three things, returning them as STRICT JSON only — no markdown, no code fences, no commentary.\n\nYou receive: service (what they want built), description (project detail), budget (PKR).\n\n1) CLASSIFY — service_category: choose EXACTLY ONE of these canonical values, returned verbatim: \"AI Voice Agent Development\", \"AI Chatbot Development\", \"Workflow Automation\", \"AI Consulting and Strategy\", \"Custom AI Integration\", \"Data / Web Scraping\", \"Other\". Pick the single closest fit from service + description; use \"Other\" only when none reasonably apply.\n\n2) CHECK / SUMMARIZE — summary: one third-person sentence (max ~30 words) stating who the client is and what they want built, written for an internal sales rep skimming a Slack alert. No greeting, no fluff, do not restate the budget.\n\n3) RECOMMEND — next_action: one short imperative sentence giving the team's immediate next step (e.g. \"Schedule a scoping call to map the required voice call flows and integrations.\").\n\nRULES: Base every field ONLY on the provided intake — never invent details, requirements, or numbers. If the description is thin, summarize only what is given. Do NOT output a priority field; priority is computed separately from budget.\n\nReturn a single JSON object with EXACTLY these keys: service_category, summary, next_action."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -528,
+        576
+      ],
+      "id": "8812109e-8ff0-4363-8bee-12112686ff3f",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -528,
+        768
+      ],
+      "id": "86929ea4-a10b-4efa-a784-53a324c78cb4",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "C6j7blqHkf6bKnue",
+          "name": "OpenAI account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize intake": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI output": {
+      "main": [
+        [
+          {
+            "node": "Compute priority + merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute priority + merge": {
+      "main": [
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create a page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Create a record": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a page": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Build status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build status": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Parse AI output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "6d6ab118-9bd4-40af-b385-c9562a15e963",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "aiBuilderAssisted": false,
+    "instanceId": "b4d163fe1103871bc186de97bfdb525f540843a7806f36bb6a22b8bfb63c5d84"
+  },
+  "nodeGroups": [],
+  "id": "JfFecEOA4SihNmIK",
+  "tags": []
+}
