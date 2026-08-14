@@ -64,90 +64,23 @@ AI-Automation-Internship/
     ├── ...
 ```
 
-Each day's folder contains the relevant practical work, documentation, screenshots, exported workflows, and other required deliverables.
+Each day's folder contains its own README with the relevant practical work, documentation, screenshots, exported workflows, and other required deliverables. See [Internship Progress](#-internship-progress) below for the full day-by-day index.
 
 ---
 
 ## 📚 Internship Progress
 
-### Day 01
+Each day has its own README with the full write-up (steps, screenshots, workflows, learnings). This table is just an index — open the linked folder for details.
 
-Orientation and an introductory meeting covering guidance on learning goals and initial activities related to the AI Automation and System Engineering Internship.
-
-### Day 02
-
-Completion of industry-recognized certifications and courses to strengthen understanding of Artificial Intelligence. These include:
-
-1. Model Context Protocol (MCP) Course by Anthropic
-2. AI Fluency: Framework & Foundations by Anthropic
-3. Introduction to Agent Skills by Anthropic
-4. HubSpot AI for Marketers
-
-### Day 03 — Git, GitHub, APIs, Postman & n8n
-
-Day 03 focuses on:
-
-* Git and GitHub
-* Open-source contribution
-* API fundamentals
-* REST APIs
-* HTTP methods
-* HTTP status codes
-* Headers
-* Authentication
-* Postman
-* n8n Webhooks
-* Google Sheets integration
-* Lead Management API
-
-Detailed work is available in:
-
-```text
-Day-03/
-```
-
-### Day 04 — Zapier & AI Agent Automation (MCP)
-
-Completion of seven Zapier Academy certifications covering Zaps, AI Agents, and the Model Context Protocol (MCP).
-
-Detailed work is available in:
-
-```text
-Day-04/
-```
-
-### Day 05 — Slack & Notion + n8n Automation
-
-Day 05 moved from single-tool automations into connecting tools together — Slack for team notifications, Notion as the structured data source, and n8n as the glue running three real, end-to-end workflows:
-
-* Slack fundamentals — workspace, channels, threads, DMs, a scoped bot app
-* Notion fundamentals — pages, blocks, databases, properties, views, and integration sharing
-* Connecting n8n to Slack & Notion — credentials, authentication, dynamic channel/database selection
-* Mapping live trigger data into Slack messages and Notion pages instead of hardcoded text
-* Error handling & observability — routing a deliberate workflow failure to a dedicated Slack alert channel
-* Three working workflows: Task → Slack alert, Client Onboarding → Slack channel + announcement, Google Form → Sheets → Notion student registration
-
-Detailed work is available in:
-
-```text
-Day-05/
-```
-
-### Day 06 — Airtable + n8n Automation
-
-Day 06 introduced **Airtable** as the central database for an AI agency, then connected it to n8n so record changes trigger real notifications — the same trigger → transform → notify/record pattern as Day 05, but with Airtable as the shared source of truth and full CRUD (not just reads) driving the automations:
-
-* Airtable fundamentals — bases, tables, records, fields, views, interfaces, automations
-* Database design — 5 tables (Clients, Projects, Leads, AI Agents, Interns) built to a fixed schema, each with sample data and a second view (Kanban/Calendar/Gallery/Form)
-* Airtable + n8n integration — Personal Access Token credential, all 4 CRUD operations (Create, Search, Update, Delete) tested in one chained workflow before anything else was built
-* Five working, end-to-end workflows: Lead → Slack alert, Client Onboarding → generate Client ID → Slack, Project Status change → Gmail, AI Agent Status change → Slack, Task Completed → recalculate & write back Performance Score
-* Practical assignment — the 5 tables + 5 workflows together form a working Client / Lead / Project / Internship / AI Agent tracking system
-
-Detailed work is available in:
-
-```text
-Day-06/
-```
+| Day | Topic | Details |
+| --- | ----- | ------- |
+| 01 | Orientation & internship kickoff | — |
+| 02 | AI certifications (MCP, AI Fluency, Agent Skills, HubSpot AI) | — |
+| 03 | Git, GitHub, APIs, Postman & n8n | [Day-03](Day-03/README.md) |
+| 04 | Zapier & AI Agent Automation (MCP) | [Day-04](Day-04/README.md) |
+| 05 | Slack & Notion + n8n Automation | [Day-05](Day-05/README.md) |
+| 06 | Airtable + n8n Automation | [Day-06](Day-06/README.md) |
+| 07 | AI Client Onboarding System (Vapi, n8n, Airtable, Notion, Slack) | [Day-07](<Day-07/AI Client Onboarding System/README.md>) |
 
 ---
 
