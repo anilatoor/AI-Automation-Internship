@@ -1,7 +1,5 @@
 # Task 8 — Instagram Content Agent ⭐ Most Interesting
 
-[← Back to Zapier index](../README.md) · [Roadmap section](../../roadmap.md#phase-8--module-8-instagram-content-agent-autonomous-agent--most-interesting)
-
 ## 📋 Task Description
 
 Autonomous agent that plans, writes, self-critiques, and queues Instagram content for human approval — never auto-publishing.
@@ -50,19 +48,19 @@ Built as a single **Zapier Agent** (not a multi-step Zap) so the model itself ow
 
 Actual run captured below (single "AI Automation" idea seeded in `Content Ideas`):
 
-| Step | What Happened |
-| --- | --- |
-| Input row | `Content Ideas`: Topic = AI Automation · Product = AI Course · Target Audience = Business Owners · Content Type = Educational · Goal = Leads · Status = Available |
-| Agent decision | Kept the seeded Topic/Content Type (calendar was empty — "no diversity constraints" per its own reasoning trace) and generated the full post |
-| Self-critique | Scored 9/10 → approved on the first pass (no rewrite loop triggered) |
-| Table write | Agent called `Zapier Tables: Create Record` on `Instagram Content Calendar` → Record created successfully, ID `01M1442RANQTT660TM2QKYAZC8`, Status = "Awaiting Approval" |
-| Human notification | Agent posted the full post to Slack `#content-approvals` via the Content Review Bot, tagged "New Instagram post ready for review - Score: 9/10", awaiting a ✅ / 📝 reaction |
-| Auto-publish check | Confirmed — post is stored as "Awaiting Approval" only; nothing was published |
+| Step               | What Happened                                                                                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Input row          | `Content Ideas`: Topic = AI Automation · Product = AI Course · Target Audience = Business Owners · Content Type = Educational · Goal = Leads · Status = Available       |
+| Agent decision     | Kept the seeded Topic/Content Type (calendar was empty — "no diversity constraints" per its own reasoning trace) and generated the full post                                  |
+| Self-critique      | Scored 9/10 → approved on the first pass (no rewrite loop triggered)                                                                                                          |
+| Table write        | Agent called`Zapier Tables: Create Record` on `Instagram Content Calendar` → Record created successfully, ID `01M1442RANQTT660TM2QKYAZC8`, Status = "Awaiting Approval" |
+| Human notification | Agent posted the full post to Slack`#content-approvals` via the Content Review Bot, tagged "New Instagram post ready for review - Score: 9/10", awaiting a ✅ / 📝 reaction  |
+| Auto-publish check | Confirmed — post is stored as "Awaiting Approval" only; nothing was published                                                                                                 |
 
 ## 🖼️ Screenshots
 
-- [`Content Idea Table.png`](screenshots/Content%20Idea%20Table.png) — the seeded `Content Ideas` input row (AI Automation / AI Course / Business Owners / Educational / Leads)
-- [`Record Created by Agent.png`](screenshots/Record%20Created%20by%20Agent.png) — agent config (tools + knowledge sources) and its preview confirming `Zapier Tables: Create Record` succeeded
-- [`Notification Summary by Agent.png`](screenshots/Notification%20Summary%20by%20Agent.png) — agent's own run summary (Date, Topic, Content Type, Goal, Score 9/10, Status, Record ID) right before it notifies a human
-- [`Slack Notification for Approval.png`](screenshots/Slack%20Notification%20for%20Approval.png) — the resulting message in `#content-approvals`, with the full caption/hook/CTA/hashtags/visual concept and the approve/request-changes instructions
-- [`Instagram Calander Table LHS.png`](screenshots/Instagram%20Calander%20Table%20LHS.png) / [`Instagram Calander Table RHS.png`](screenshots/Instagram%20Calander%20Table%20RHS.png) — the `Instagram Content Calendar` table **populated directly by the agent's table-write action**, showing all columns (Date, Topic, Content Type, Caption, Hook, CTA, Hashtags, Visual Concept, Score = 9, Status = Awaiting Approval)
+- [`Content Idea Table.png`](<screenshots/Content%20Idea%20Table.png>) — the seeded `Content Ideas` input row (AI Automation / AI Course / Business Owners / Educational / Leads)
+- [`Record Created by Agent.png`](<screenshots/Record%20Created%20by%20Agent.png>) — agent config (tools + knowledge sources) and its preview confirming `Zapier Tables: Create Record` succeeded
+- [`Notification Summary by Agent.png`](<screenshots/Notification%20Summary%20by%20Agent.png>) — agent's own run summary (Date, Topic, Content Type, Goal, Score 9/10, Status, Record ID) right before it notifies a human
+- [`Slack Notification for Approval.png`](<screenshots/Slack%20Notification%20for%20Approval.png>) — the resulting message in `#content-approvals`, with the full caption/hook/CTA/hashtags/visual concept and the approve/request-changes instructions
+- [`Instagram Calander Table LHS.png`](<screenshots/Instagram%20Calander%20Table%20LHS.png>) / [`Instagram Calander Table RHS.png`](<screenshots/Instagram%20Calander%20Table%20RHS.png>) — the `Instagram Content Calendar` table **populated directly by the agent's table-write action**, showing all columns (Date, Topic, Content Type, Caption, Hook, CTA, Hashtags, Visual Concept, Score = 9, Status = Awaiting Approval)
