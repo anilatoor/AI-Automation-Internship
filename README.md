@@ -81,6 +81,7 @@ Each day has its own README with the full write-up (steps, screenshots, workflow
 | 05 | Slack & Notion + n8n Automation | [Day-05](Day-05/README.md) |
 | 06 | Airtable + n8n Automation | [Day-06](Day-06/README.md) |
 | 07 | AI Client Onboarding System (Vapi, n8n, Airtable, Notion, Slack) | [Day-07](<Day-07/AI Client Onboarding System/README.md>) |
+| 08-13 | Zapier — 10 automation tasks (Forms, Tables, Chatbots, AI Agents) covering lead intake, expense approval, support bots, appointment booking, onboarding & recruitment pipelines, an autonomous support agent, an Instagram content agent, and a master AI Operations Manager agent | [Day-08-13](Day-08-13/README.md) |
 
 ---
 
