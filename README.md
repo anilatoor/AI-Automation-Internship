@@ -132,7 +132,7 @@ Through this internship, I aim to strengthen my ability to:
 
 This repository serves as a practical portfolio of my progress in:
 
-**AI Automation | No-Code & Low-Code Systems Engineering | APIs | Workflow Automation | AI Agents | System Integration**
+AI Automation | No-Code & Low-Code Systems Engineering | APIs | Workflow Automation | AI Agents | System Integration
 
 ---
 
