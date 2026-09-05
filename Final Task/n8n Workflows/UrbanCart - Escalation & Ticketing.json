@@ -1,0 +1,535 @@
+{
+  "name": "UrbanCart - Escalation & Ticketing",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "urbancart-escalate",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n1",
+      "name": "Escalation Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        304
+      ],
+      "webhookId": "urbancart-escalate"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nlet a = {}; let isVapi = false; let toolCallId = null;\nif (body.message && body.message.toolCalls) {\n  isVapi = true;\n  const call = body.message.toolCalls[0];\n  toolCallId = call.id;\n  let args = call.function ? call.function.arguments : {};\n  if (typeof args === 'string') { try { args = JSON.parse(args); } catch (e) { args = {}; } }\n  a = args;\n} else {\n  a = body;\n}\nreturn {\n  name: a.name || '', phone: a.phone || '', category: a.category || 'other',\n  summary: a.summary || '', order_code: a.order_code || '', channel: a.channel || 'website',\n  isVapi, toolCallId\n};"
+      },
+      "id": "n2",
+      "name": "Normalize Escalation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "customers",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "phone",
+              "condition": "eq",
+              "keyValue": "={{ $json.phone }}"
+            }
+          ]
+        }
+      },
+      "id": "n3",
+      "name": "Get Existing Customer",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        448,
+        304
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "AfG2czji6YBHYAiB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n4",
+      "name": "Customer Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "customer_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n5",
+      "name": "Use Existing Customer Id",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "customers",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $('Normalize Escalation').item.json.name }}"
+            },
+            {
+              "fieldId": "phone",
+              "fieldValue": "={{ $('Normalize Escalation').item.json.phone }}"
+            },
+            {
+              "fieldId": "channel_first_seen",
+              "fieldValue": "={{ $('Normalize Escalation').item.json.channel }}"
+            }
+          ]
+        }
+      },
+      "id": "n6",
+      "name": "Create Customer",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        896,
+        384
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AfG2czji6YBHYAiB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "customer_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n7",
+      "name": "Use New Customer Id",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        384
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "n8",
+      "name": "Merge Customer Id",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1344,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "orders",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "order_code",
+              "condition": "eq",
+              "keyValue": "={{ $('Normalize Escalation').item.json.order_code }}"
+            }
+          ]
+        }
+      },
+      "id": "n9",
+      "name": "Find Related Order",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        304
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "AfG2czji6YBHYAiB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "tickets",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "customer_id",
+              "fieldValue": "={{ $('Merge Customer Id').item.json.customer_id }}"
+            },
+            {
+              "fieldId": "order_id",
+              "fieldValue": "={{ $json.id ?? null }}"
+            },
+            {
+              "fieldId": "category",
+              "fieldValue": "={{ $('Normalize Escalation').item.json.category }}"
+            },
+            {
+              "fieldId": "priority",
+              "fieldValue": "high"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "open"
+            },
+            {
+              "fieldId": "summary",
+              "fieldValue": "={{ $('Normalize Escalation').item.json.summary }}"
+            }
+          ]
+        }
+      },
+      "id": "n10",
+      "name": "Insert Ticket",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1792,
+        304
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AfG2czji6YBHYAiB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "app1lZKqpIeonfU2e"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbl2BXaCoEQzUNKyo"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Customer": "={{ $('Normalize Escalation').item.json.name }}",
+            "Phone": "={{ $('Normalize Escalation').item.json.phone }}",
+            "Order Code": "={{ $('Normalize Escalation').item.json.order_code }}",
+            "Category": "={{ ({damaged_product:'Damaged Product', refund:'Refund', angry_customer:'Angry Customer', low_confidence:'Low Confidence', other:'Other'})[$('Normalize Escalation').item.json.category] || 'Other' }}",
+            "Priority": "High",
+            "Status": "Open",
+            "Summary": "={{ $('Normalize Escalation').item.json.summary }}",
+            "Supabase Ticket ID": "={{ $('Insert Ticket').item.json.id }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "n11",
+      "name": "Create Ticket Card (Airtable)",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        304
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "FLDaEUsZhFd9mbBZ",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "support-urgent"
+        },
+        "text": "=🚨 *High-Priority Support Issue*\n*Category:* {{ $('Normalize Escalation').item.json.category }}\n*Customer:* {{ $('Normalize Escalation').item.json.name }} ({{ $('Normalize Escalation').item.json.phone }})\n*Order:* {{ $('Normalize Escalation').item.json.order_code || 'N/A' }}\n*Summary:* {{ $('Normalize Escalation').item.json.summary }}\n*Channel:* {{ $('Normalize Escalation').item.json.channel }}",
+        "otherOptions": {}
+      },
+      "id": "n12",
+      "name": "Alert Support Urgent",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        2240,
+        304
+      ],
+      "webhookId": "69aa324d-96fe-4107-90e1-14dc248b9b19",
+      "credentials": {
+        "slackApi": {
+          "id": "g6OlX1yYpKfZ87BP",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const norm = $('Normalize Escalation').item.json;\nconst message = 'A team member is taking over this conversation and will follow up shortly.';\nif (norm.isVapi) { return { results: [ { toolCallId: norm.toolCallId, result: message } ] }; }\nreturn { status: 'escalated', message };"
+      },
+      "id": "n13",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "n14",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2688,
+        304
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Escalation Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Escalation": {
+      "main": [
+        [
+          {
+            "node": "Get Existing Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Existing Customer": {
+      "main": [
+        [
+          {
+            "node": "Customer Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Found?": {
+      "main": [
+        [
+          {
+            "node": "Use Existing Customer Id",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use Existing Customer Id": {
+      "main": [
+        [
+          {
+            "node": "Merge Customer Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Customer": {
+      "main": [
+        [
+          {
+            "node": "Use New Customer Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use New Customer Id": {
+      "main": [
+        [
+          {
+            "node": "Merge Customer Id",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Customer Id": {
+      "main": [
+        [
+          {
+            "node": "Find Related Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Related Order": {
+      "main": [
+        [
+          {
+            "node": "Insert Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Ticket": {
+      "main": [
+        [
+          {
+            "node": "Create Ticket Card (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Ticket Card (Airtable)": {
+      "main": [
+        [
+          {
+            "node": "Alert Support Urgent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Support Urgent": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "errorWorkflow": "JZ7wxcqOxM5IKrOB",
+    "availableInMCP": true
+  },
+  "versionId": "b1135b03-6ebd-489a-9aac-ad4eb6078258",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "b4d163fe1103871bc186de97bfdb525f540843a7806f36bb6a22b8bfb63c5d84"
+  },
+  "nodeGroups": [],
+  "id": "8E38L11PfRKEyu7W",
+  "tags": []
+}

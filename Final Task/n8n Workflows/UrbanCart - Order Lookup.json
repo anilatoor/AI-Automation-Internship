@@ -1,0 +1,302 @@
+{
+  "name": "UrbanCart - Order Lookup",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "urbancart-order-lookup",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n1",
+      "name": "Order Lookup Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        304
+      ],
+      "webhookId": "urbancart-order-lookup"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nlet orderCode = ''; let isVapi = false; let toolCallId = null;\nif (body.message && body.message.toolCalls) {\n  isVapi = true;\n  const call = body.message.toolCalls[0];\n  toolCallId = call.id;\n  let args = call.function ? call.function.arguments : {};\n  if (typeof args === 'string') { try { args = JSON.parse(args); } catch (e) { args = {}; } }\n  orderCode = args.order_code || '';\n} else {\n  orderCode = body.order_code || '';\n}\nreturn { order_code: (orderCode + '').trim().toUpperCase(), isVapi, toolCallId };"
+      },
+      "id": "n2",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.order_code }}",
+              "rightValue": "^UC-[0-9]+$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n3",
+      "name": "Valid Format?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const norm = $('Normalize Input').item.json;\nconst payload = { status: \"invalid_format\", message: \"Could you confirm your order code? It should look like UC-10452.\" };\nif (norm.isVapi) { return { results: [ { toolCallId: norm.toolCallId, result: payload.message || JSON.stringify(payload) } ] }; }\nreturn payload;"
+      },
+      "id": "n4",
+      "name": "Build Invalid Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "orders",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "order_code",
+              "condition": "eq",
+              "keyValue": "={{ $json.order_code }}"
+            }
+          ]
+        }
+      },
+      "id": "n5",
+      "name": "Get Order",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        672,
+        224
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "AfG2czji6YBHYAiB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n6",
+      "name": "Order Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const norm = $('Normalize Input').item.json;\nconst o = $json;\nconst message = `Order ${o.order_code} is currently ${o.status}` + (o.expected_delivery ? `, expected delivery ${o.expected_delivery}.` : '.');\nconst payload = { status: 'found', order_code: o.order_code, order_status: o.status, expected_delivery: o.expected_delivery, items: o.items, message };\nif (norm.isVapi) { return { results: [ { toolCallId: norm.toolCallId, result: message } ] }; }\nreturn payload;"
+      },
+      "id": "n7",
+      "name": "Build Found Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const norm = $('Normalize Input').item.json;\nconst payload = { status: \"not_found\", message: \"I could not find that order. A team member will follow up shortly.\" };\nif (norm.isVapi) { return { results: [ { toolCallId: norm.toolCallId, result: payload.message || JSON.stringify(payload) } ] }; }\nreturn payload;"
+      },
+      "id": "n8",
+      "name": "Build Not Found Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "n9",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1344,
+        304
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Order Lookup Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Valid Format?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Format?": {
+      "main": [
+        [
+          {
+            "node": "Get Order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Invalid Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order": {
+      "main": [
+        [
+          {
+            "node": "Order Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order Found?": {
+      "main": [
+        [
+          {
+            "node": "Build Found Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Not Found Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Invalid Format Response": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Found Response": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Not Found Response": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "errorWorkflow": "JZ7wxcqOxM5IKrOB",
+    "availableInMCP": true
+  },
+  "versionId": "c82b72bf-3030-4e94-86c1-770c99391d5a",
+  "meta": {
+    "instanceId": "b4d163fe1103871bc186de97bfdb525f540843a7806f36bb6a22b8bfb63c5d84"
+  },
+  "nodeGroups": [],
+  "id": "pKUi6tCXlWLjiAnE",
+  "tags": []
+}

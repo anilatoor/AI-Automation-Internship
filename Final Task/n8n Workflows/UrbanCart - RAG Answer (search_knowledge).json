@@ -1,0 +1,251 @@
+{
+  "name": "UrbanCart - RAG Answer (search_knowledge)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "urbancart-rag-answer",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n1",
+      "name": "RAG Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        304
+      ],
+      "webhookId": "urbancart-rag-answer"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nlet question = '';\nlet isVapi = false;\nlet toolCallId = null;\nif (body.message && body.message.toolCalls) {\n  isVapi = true;\n  const call = body.message.toolCalls[0];\n  toolCallId = call.id;\n  let args = call.function ? call.function.arguments : {};\n  if (typeof args === 'string') { try { args = JSON.parse(args); } catch (e) { args = {}; } }\n  question = args.question || args.query || '';\n} else {\n  question = body.question || body.query || '';\n}\nreturn { question, isVapi, toolCallId };"
+      },
+      "id": "n2",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.question }}",
+        "options": {
+          "systemMessage": "You answer UrbanCart product and policy questions (delivery, returns, warranty, pricing, availability) grounded in the company's real documents.\n\nAlways call the knowledge_base tool with the customer's question first. Answer ONLY using what the tool returns.\nIf the tool returns nothing relevant, respond with exactly: I don't have that information yet, a team member will confirm and follow up.\nKeep the answer to 1-3 short sentences suitable for reading aloud on a phone call.",
+          "maxIterations": 3,
+          "enableStreaming": false
+        }
+      },
+      "id": "n3",
+      "name": "Answer From Knowledge Base",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "n4",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        544
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "C6j7blqHkf6bKnue",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "dimensions": 1536
+        }
+      },
+      "id": "n5",
+      "name": "FAQ Tool Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        640
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "C6j7blqHkf6bKnue",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search UrbanCart's product catalog, return policy, shipping policy, warranty info and support guidelines.",
+        "tableName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "doc_chunks"
+        },
+        "options": {
+          "queryName": "match_doc_chunks"
+        }
+      },
+      "id": "n6",
+      "name": "knowledge_base",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        624,
+        496
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AfG2czji6YBHYAiB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const norm = $('Normalize Input').item.json;\nconst answer = $json.output;\nif (norm.isVapi) {\n  return { results: [ { toolCallId: norm.toolCallId, result: answer } ] };\n}\nreturn { answer };"
+      },
+      "id": "n7",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "n8",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        304
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "RAG Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Answer From Knowledge Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer From Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Answer From Knowledge Base",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FAQ Tool Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "knowledge_base",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "knowledge_base": {
+      "ai_tool": [
+        [
+          {
+            "node": "Answer From Knowledge Base",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "errorWorkflow": "JZ7wxcqOxM5IKrOB"
+  },
+  "versionId": "9bb53875-6068-4d0b-a3cc-c1876a432dc6",
+  "meta": {
+    "instanceId": "b4d163fe1103871bc186de97bfdb525f540843a7806f36bb6a22b8bfb63c5d84"
+  },
+  "nodeGroups": [],
+  "id": "nc6apd0IGTR7Io5C",
+  "tags": []
+}

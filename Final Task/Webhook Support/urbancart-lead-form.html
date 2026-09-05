@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UrbanCart — Lead Capture</title>
+<style>
+  :root{
+    --ink:#1c2530;
+    --ink-soft:#5a6572;
+    --canvas:#f6f5f2;
+    --panel:#ffffff;
+    --line:#e6e3dd;
+    --marigold:#e8871e;
+    --marigold-deep:#c9711a;
+    --hot:#e8531e;
+    --warm:#e8a91e;
+    --cold:#3d7fb8;
+    --field-bg:#faf9f6;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;min-height:100%;}
+  body{
+    background:var(--canvas);
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    color:var(--ink);
+    display:flex;align-items:flex-start;justify-content:center;
+    padding:28px 16px;
+  }
+  .card{
+    width:100%;max-width:460px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 14px 44px -20px rgba(28,37,48,.35);
+  }
+  header{
+    padding:22px 26px 18px;
+    border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:12px;
+  }
+  .mark{
+    width:40px;height:40px;border-radius:11px;
+    background:var(--ink);color:var(--panel);
+    display:grid;place-items:center;
+    font-weight:700;font-size:20px;letter-spacing:-.5px;flex:none;
+  }
+  .mark span{color:var(--marigold);}
+  header h1{margin:0;font-size:17px;font-weight:650;letter-spacing:-.2px;}
+  header p{margin:3px 0 0;font-size:12.5px;color:var(--ink-soft);}
+  form{padding:22px 26px 26px;}
+  .field{margin-bottom:16px;}
+  label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink);}
+  label .req{color:var(--marigold-deep);}
+  input,select{
+    width:100%;border:1px solid var(--line);border-radius:9px;
+    padding:11px 12px;font:inherit;font-size:14px;background:var(--field-bg);color:var(--ink);
+    outline:none;transition:border-color .15s,background .15s;
+  }
+  input:focus,select:focus{border-color:var(--marigold);background:#fff;}
+  .row{display:flex;gap:12px;}
+  .row .field{flex:1;}
+  button{
+    width:100%;margin-top:6px;border:none;cursor:pointer;
+    background:var(--marigold);color:#fff;font-weight:650;font-size:15px;
+    padding:13px;border-radius:10px;transition:background .15s;
+  }
+  button:hover{background:var(--marigold-deep);}
+  button:disabled{opacity:.55;cursor:default;}
+  .result{margin-top:20px;padding:16px;border-radius:11px;display:none;font-size:14px;line-height:1.5;}
+  .result.show{display:block;}
+  .result.ok{background:#f0f7f0;border:1px solid #cfe6cf;}
+  .result.err{background:#fbf0ee;border:1px solid #eccfc9;color:#9c3a2a;}
+  .score-badge{
+    display:inline-block;padding:3px 11px;border-radius:20px;font-size:12.5px;font-weight:700;
+    color:#fff;margin-left:6px;vertical-align:1px;
+  }
+  .score-Hot{background:var(--hot);}
+  .score-Warm{background:var(--warm);}
+  .score-Cold{background:var(--cold);}
+  .result .headline{font-weight:650;margin-bottom:4px;}
+  .config{padding:11px 16px;background:#fbfaf8;border-top:1px solid var(--line);
+    font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:8px;}
+  .config input{flex:1;border:1px solid var(--line);border-radius:6px;padding:5px 8px;
+    font-size:11.5px;color:var(--ink);font-family:inherit;background:#fff;}
+</style>
+</head>
+<body>
+  <div class="card">
+    <header>
+      <div class="mark">U<span>C</span></div>
+      <div>
+        <h1>Lead Capture</h1>
+        <p>Register a customer's buying interest</p>
+      </div>
+    </header>
+
+    <form id="leadForm">
+      <div class="field">
+        <label>Full name <span class="req">*</span></label>
+        <input id="name" placeholder="e.g. Ali Raza" required>
+      </div>
+
+      <div class="field">
+        <label>Phone <span class="req">*</span></label>
+        <input id="phone" placeholder="e.g. 03001234567" required>
+      </div>
+
+      <div class="field">
+        <label>Product interest <span class="req">*</span></label>
+        <input id="product_interest" placeholder="e.g. gaming laptop" required>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>Budget (PKR)</label>
+          <input id="budget_pkr" type="number" placeholder="150000" min="0">
+        </div>
+        <div class="field">
+          <label>City</label>
+          <input id="city" placeholder="Lahore">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Purchase intent</label>
+        <select id="purchase_intent">
+          <option value="ready">Ready to buy</option>
+          <option value="browsing">Just browsing</option>
+        </select>
+      </div>
+
+      <button type="submit" id="submitBtn">Submit lead</button>
+
+      <div class="result" id="result"></div>
+    </form>
+
+    <div class="config">
+      <span>Webhook</span>
+      <input id="webhook" value="https://anila092.app.n8n.cloud/webhook/urbancart-lead-capture">
+    </div>
+  </div>
+
+<script>
+  const form    = document.getElementById('leadForm');
+  const btn     = document.getElementById('submitBtn');
+  const result  = document.getElementById('result');
+  const webhook = document.getElementById('webhook');
+
+  function showResult(html, kind){
+    result.className = 'result show ' + kind;
+    result.innerHTML = html;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      name: document.getElementById('name').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      product_interest: document.getElementById('product_interest').value.trim(),
+      budget_pkr: Number(document.getElementById('budget_pkr').value || 0),
+      city: document.getElementById('city').value.trim(),
+      purchase_intent: document.getElementById('purchase_intent').value,
+      channel: 'website'
+    };
+
+    if(!payload.name || !payload.phone || !payload.product_interest){
+      showResult('Please fill in name, phone and product interest.', 'err');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+    result.className = 'result';
+
+    try{
+      const res = await fetch(webhook.value.trim(), {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+
+      if(data.status === 'success'){
+        const score = data.score || '—';
+        showResult(
+          '<div class="headline">Lead captured '
+          + '<span class="score-badge score-' + score + '">' + score + '</span></div>'
+          + (data.message || 'Saved.')
+          + (score === 'Hot' ? '<br>🔥 Sales team alerted in #sales-leads.' : ''),
+          'ok'
+        );
+        form.reset();
+      } else {
+        showResult(data.message || 'Something went wrong.', 'err');
+      }
+    }catch(err){
+      showResult("Couldn't reach the workflow. Check that the Lead Capture workflow is Active and the webhook URL below is correct.", 'err');
+      console.error(err);
+    }finally{
+      btn.disabled = false;
+      btn.textContent = 'Submit lead';
+    }
+  });
+</script>
+</body>
+</html>

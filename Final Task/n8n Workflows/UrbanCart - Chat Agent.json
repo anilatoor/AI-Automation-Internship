@@ -1,0 +1,393 @@
+{
+  "name": "UrbanCart - Chat Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "urbancart-chat",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "n1",
+      "name": "Chat Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        304
+      ],
+      "webhookId": "urbancart-chat"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "message",
+              "value": "={{ $json.body?.message ?? $json.message ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "phone",
+              "value": "={{ $json.body?.phone ?? $json.phone ?? \"unknown\" }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "name",
+              "value": "={{ $json.body?.name ?? $json.name ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "channel",
+              "value": "={{ $json.body?.channel ?? $json.channel ?? \"website\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n2",
+      "name": "Normalize Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -112,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message }}",
+        "options": {
+          "systemMessage": "You are UrbanCart's customer assistant for website chat and WhatsApp. UrbanCart is an e-commerce store in Pakistan selling electronics, accessories, home and lifestyle products.\n\n=== HONESTY RULE (never break this) ===\nNever invent product details, prices, delivery times, return/warranty terms, or order status. For ANY product or policy question, you MUST call the knowledge_base tool first and answer only from what it returns. If the tool returns nothing relevant or you are not confident, tell the customer a team member will follow up shortly instead of guessing.\n\n=== TOOLS ===\n- knowledge_base: search UrbanCart's real product catalog, return policy, shipping policy, warranty info and support guidelines. Always use this for product/price/availability/delivery/return/warranty questions before answering.\n- lookup_order: look up a live order by its code (format UC-##### e.g. UC-10452). Use when the customer asks about an existing order. If not found, tell them a human will confirm.\n- capture_lead: use when the customer shows buying interest. Collect name, phone, product they want, approximate budget (PKR), city, and whether they are ready to buy or just browsing. Only call this once you have at least name, phone and product.\n- escalate: use immediately if the customer reports a damaged product, wants a complicated refund, sounds angry/frustrated, or explicitly asks for a human. Do not try to resolve these yourself — hand off gracefully and call this tool with a short summary.\n\n=== STYLE ===\nConcise, warm, helpful. 2-4 sentences per reply. Do not use markdown headings. Stay scoped to UrbanCart topics.",
+          "maxIterations": 6,
+          "enableStreaming": false
+        }
+      },
+      "id": "n3",
+      "name": "UrbanCart Assistant",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        144,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "n4",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        128,
+        496
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "C6j7blqHkf6bKnue",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Normalize Message').item.json.phone }}",
+        "contextWindowLength": 10
+      },
+      "id": "n5",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        240,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "dimensions": 1536
+        }
+      },
+      "id": "n6",
+      "name": "FAQ Tool Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        672
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "C6j7blqHkf6bKnue",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search UrbanCart's product catalog, return policy, shipping policy, warranty info and support guidelines. Always call this before answering a product or policy question, and base the answer only on the returned text.",
+        "tableName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "doc_chunks"
+        },
+        "options": {
+          "queryName": "match_doc_chunks"
+        }
+      },
+      "id": "n7",
+      "name": "knowledge_base",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        400,
+        512
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AfG2czji6YBHYAiB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"reply\": $json.output } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "n11",
+      "name": "Respond With Reply",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        688,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Look up a UrbanCart order by its code (format UC-##### e.g. UC-10452) and return its live status and expected delivery date.",
+        "method": "POST",
+        "url": "https://anila092.app.n8n.cloud/webhook/urbancart-order-lookup",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"order_code\": $fromAI('order_code', 'the order code the customer mentioned, e.g. UC-10452', 'string') } }}",
+        "options": {}
+      },
+      "id": "028e435d-ac31-4e2c-bfb4-da4037433ec0",
+      "name": "lookup_order",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        752,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Save a sales lead once the customer has shown buying interest and you have at least their name, phone and product interest.",
+        "method": "POST",
+        "url": "https://anila092.app.n8n.cloud/webhook/urbancart-lead-capture",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"name\": $fromAI('name', 'customer full name', 'string'), \"phone\": $('Normalize Message').item.json.phone, \"product_interest\": $fromAI('product_interest', 'the product the customer is interested in', 'string'), \"budget_pkr\": $fromAI('budget_pkr', 'approximate budget in PKR, 0 if unknown', 'number'), \"city\": $fromAI('city', 'customer city, empty string if unknown', 'string'), \"purchase_intent\": $fromAI('purchase_intent', 'either ready or browsing', 'string'), \"channel\": $('Normalize Message').item.json.channel } }}",
+        "options": {}
+      },
+      "id": "5bd23bf5-3cbf-4ea7-8fb4-93423f8b0a38",
+      "name": "capture_lead",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        1040,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Hand off to a human immediately for damaged products, complicated refunds, angry or frustrated customers, or an explicit request to speak to a human.",
+        "method": "POST",
+        "url": "https://anila092.app.n8n.cloud/webhook/urbancart-escalate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"name\": $('Normalize Message').item.json.name, \"phone\": $('Normalize Message').item.json.phone, \"category\": $fromAI('category', 'one of: damaged_product, refund, angry_customer, low_confidence, other', 'string'), \"summary\": $fromAI('summary', 'short summary of the issue for the support team', 'string'), \"order_code\": $fromAI('order_code', 'related order code if mentioned, empty string otherwise', 'string'), \"channel\": $('Normalize Message').item.json.channel } }}",
+        "options": {}
+      },
+      "id": "7026d2e6-1629-4bf7-9cc7-a95ce21a9536",
+      "name": "escalate",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        896,
+        528
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Message": {
+      "main": [
+        [
+          {
+            "node": "UrbanCart Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UrbanCart Assistant": {
+      "main": [
+        [
+          {
+            "node": "Respond With Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "UrbanCart Assistant",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "UrbanCart Assistant",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FAQ Tool Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "knowledge_base",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "knowledge_base": {
+      "ai_tool": [
+        [
+          {
+            "node": "UrbanCart Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "lookup_order": {
+      "main": [
+        []
+      ],
+      "ai_tool": [
+        [
+          {
+            "node": "UrbanCart Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "capture_lead": {
+      "main": [
+        []
+      ],
+      "ai_tool": [
+        [
+          {
+            "node": "UrbanCart Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "escalate": {
+      "main": [
+        []
+      ],
+      "ai_tool": [
+        [
+          {
+            "node": "UrbanCart Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "errorWorkflow": "JZ7wxcqOxM5IKrOB"
+  },
+  "versionId": "26eb5c4f-e7cc-48a0-9bf6-262ed8eb0e04",
+  "meta": {
+    "aiBuilderAssisted": false,
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b4d163fe1103871bc186de97bfdb525f540843a7806f36bb6a22b8bfb63c5d84"
+  },
+  "nodeGroups": [],
+  "id": "OuIf0VBC2TATLm67",
+  "tags": []
+}

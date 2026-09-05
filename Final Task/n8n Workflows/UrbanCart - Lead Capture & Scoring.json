@@ -1,0 +1,803 @@
+{
+  "name": "UrbanCart - Lead Capture & Scoring",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "urbancart-lead-capture",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "n1",
+      "name": "Lead Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        304
+      ],
+      "webhookId": "urbancart-lead-capture"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nlet a = {}; let isVapi = false; let toolCallId = null;\nif (body.message && body.message.toolCalls) {\n  isVapi = true;\n  const call = body.message.toolCalls[0];\n  toolCallId = call.id;\n  let args = call.function ? call.function.arguments : {};\n  if (typeof args === 'string') { try { args = JSON.parse(args); } catch (e) { args = {}; } }\n  a = args;\n} else {\n  a = body;\n}\nreturn {\n  name: a.name || '', phone: a.phone || '', city: a.city || '',\n  product_interest: a.product_interest || '', budget_pkr: Number(a.budget_pkr || 0),\n  intent: (a.purchase_intent || a.intent || 'browsing') === 'ready_to_buy' ? 'ready' : (a.purchase_intent || a.intent || 'browsing'),\n  source: a.channel || a.source || 'website',\n  isVapi, toolCallId\n};"
+      },
+      "id": "n2",
+      "name": "Normalize Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.name }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "leftValue": "={{ $json.phone }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "leftValue": "={{ $json.product_interest }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n3",
+      "name": "Validate Required Fields",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const norm = $json;\nconst message = 'Missing required lead fields: name, phone, product_interest';\nif (norm.isVapi) { return { results: [ { toolCallId: norm.toolCallId, result: message } ] }; }\nreturn { status: 'error', message };"
+      },
+      "id": "n4",
+      "name": "Build Error Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "customers",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "phone",
+              "condition": "eq",
+              "keyValue": "={{ $json.phone }}"
+            }
+          ]
+        }
+      },
+      "id": "n5",
+      "name": "Get Existing Customer",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        672,
+        224
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "AfG2czji6YBHYAiB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n6",
+      "name": "Customer Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "customer_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "b2",
+              "name": "name",
+              "value": "={{ $('Normalize Lead').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "b3",
+              "name": "phone",
+              "value": "={{ $('Normalize Lead').item.json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "b4",
+              "name": "city",
+              "value": "={{ $('Normalize Lead').item.json.city }}",
+              "type": "string"
+            },
+            {
+              "id": "b5",
+              "name": "product_interest",
+              "value": "={{ $('Normalize Lead').item.json.product_interest }}",
+              "type": "string"
+            },
+            {
+              "id": "b6",
+              "name": "budget_pkr",
+              "value": "={{ $('Normalize Lead').item.json.budget_pkr }}",
+              "type": "number"
+            },
+            {
+              "id": "b7",
+              "name": "intent",
+              "value": "={{ $('Normalize Lead').item.json.intent }}",
+              "type": "string"
+            },
+            {
+              "id": "b8",
+              "name": "source",
+              "value": "={{ $('Normalize Lead').item.json.source }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n7",
+      "name": "Use Existing Customer Id",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "customers",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $('Normalize Lead').item.json.name }}"
+            },
+            {
+              "fieldId": "phone",
+              "fieldValue": "={{ $('Normalize Lead').item.json.phone }}"
+            },
+            {
+              "fieldId": "city",
+              "fieldValue": "={{ $('Normalize Lead').item.json.city }}"
+            },
+            {
+              "fieldId": "channel_first_seen",
+              "fieldValue": "={{ $('Normalize Lead').item.json.source }}"
+            }
+          ]
+        }
+      },
+      "id": "n8",
+      "name": "Create Customer",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        304
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AfG2czji6YBHYAiB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "customer_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "name",
+              "value": "={{ $('Normalize Lead').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "c3",
+              "name": "phone",
+              "value": "={{ $('Normalize Lead').item.json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "c4",
+              "name": "city",
+              "value": "={{ $('Normalize Lead').item.json.city }}",
+              "type": "string"
+            },
+            {
+              "id": "c5",
+              "name": "product_interest",
+              "value": "={{ $('Normalize Lead').item.json.product_interest }}",
+              "type": "string"
+            },
+            {
+              "id": "c6",
+              "name": "budget_pkr",
+              "value": "={{ $('Normalize Lead').item.json.budget_pkr }}",
+              "type": "number"
+            },
+            {
+              "id": "c7",
+              "name": "intent",
+              "value": "={{ $('Normalize Lead').item.json.intent }}",
+              "type": "string"
+            },
+            {
+              "id": "c8",
+              "name": "source",
+              "value": "={{ $('Normalize Lead').item.json.source }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n9",
+      "name": "Use New Customer Id",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        304
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "n10",
+      "name": "Merge Customer Id",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1568,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item.json;\nconst readyToBuy = (item.intent || '').toLowerCase() === 'ready';\nconst hasBudget = Number(item.budget_pkr) > 0;\nlet score = 'Cold';\nif (readyToBuy && hasBudget) score = 'Hot';\nelse if (readyToBuy || hasBudget) score = 'Warm';\nitem.score = score;\nreturn item;"
+      },
+      "id": "n11",
+      "name": "Compute Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "leads",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "customer_id",
+              "fieldValue": "={{ $json.customer_id }}"
+            },
+            {
+              "fieldId": "product_interest",
+              "fieldValue": "={{ $json.product_interest }}"
+            },
+            {
+              "fieldId": "budget_pkr",
+              "fieldValue": "={{ $json.budget_pkr }}"
+            },
+            {
+              "fieldId": "city",
+              "fieldValue": "={{ $json.city }}"
+            },
+            {
+              "fieldId": "intent",
+              "fieldValue": "={{ $json.intent }}"
+            },
+            {
+              "fieldId": "score",
+              "fieldValue": "={{ $json.score }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "={{ $json.source }}"
+            }
+          ]
+        }
+      },
+      "id": "n12",
+      "name": "Insert Lead",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        224
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AfG2czji6YBHYAiB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "app1lZKqpIeonfU2e"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYCUyuEzwffLrk6"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $('Compute Score').item.json.name }}",
+            "Phone": "={{ $('Compute Score').item.json.phone }}",
+            "Product": "={{ $('Compute Score').item.json.product_interest }}",
+            "Budget (PKR)": "={{ $('Compute Score').item.json.budget_pkr }}",
+            "City": "={{ $('Compute Score').item.json.city }}",
+            "Intent": "={{ $('Compute Score').item.json.intent === 'ready' ? 'Ready' : 'Browsing' }}",
+            "Score": "={{ $('Compute Score').item.json.score }}",
+            "Source": "={{ ({website:'chat', whatsapp:'whatsapp', chat:'chat', voice:'voice', phone:'voice'})[$('Compute Score').item.json.source] || 'chat' }}",
+            "Stage": "New",
+            "Supabase Lead ID": "={{ $('Insert Lead').item.json.id }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "n13",
+      "name": "Create Lead Card (Airtable)",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2240,
+        224
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "FLDaEUsZhFd9mbBZ",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Compute Score').item.json.score }}",
+              "rightValue": "Hot",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n14",
+      "name": "Is Hot Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2464,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "sales-leads"
+        },
+        "text": "=🔥 *New Hot Lead*\nInterested in *{{ $('Compute Score').item.json.product_interest }}*, budget Rs. {{ $('Compute Score').item.json.budget_pkr }}, located in {{ $('Compute Score').item.json.city }}.\nCustomer: {{ $('Compute Score').item.json.name }} ({{ $('Compute Score').item.json.phone }})",
+        "otherOptions": {}
+      },
+      "id": "n15",
+      "name": "Notify Sales (Hot Lead)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        2688,
+        144
+      ],
+      "webhookId": "54ae1c24-7b18-48f7-a3b9-5c1adf47c225",
+      "credentials": {
+        "slackApi": {
+          "id": "g6OlX1yYpKfZ87BP",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "n16",
+      "name": "No Notification (Warm/Cold)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2688,
+        304
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "n17",
+      "name": "Merge Notify Branch",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2912,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const norm = $('Normalize Lead').item.json;\nconst score = $('Compute Score').item.json.score;\nconst message = `Thanks! I've noted your interest, our team will follow up shortly.`;\nif (norm.isVapi) { return { results: [ { toolCallId: norm.toolCallId, result: message } ] }; }\nreturn { status: 'success', message, customer_id: $('Compute Score').item.json.customer_id, score };"
+      },
+      "id": "n18",
+      "name": "Build Success Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3152,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "n19",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3424,
+        432
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Lead Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lead": {
+      "main": [
+        [
+          {
+            "node": "Validate Required Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Required Fields": {
+      "main": [
+        [
+          {
+            "node": "Get Existing Customer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error Response": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Existing Customer": {
+      "main": [
+        [
+          {
+            "node": "Customer Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Found?": {
+      "main": [
+        [
+          {
+            "node": "Use Existing Customer Id",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use Existing Customer Id": {
+      "main": [
+        [
+          {
+            "node": "Merge Customer Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Customer": {
+      "main": [
+        [
+          {
+            "node": "Use New Customer Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use New Customer Id": {
+      "main": [
+        [
+          {
+            "node": "Merge Customer Id",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Customer Id": {
+      "main": [
+        [
+          {
+            "node": "Compute Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Score": {
+      "main": [
+        [
+          {
+            "node": "Insert Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Lead": {
+      "main": [
+        [
+          {
+            "node": "Create Lead Card (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Lead Card (Airtable)": {
+      "main": [
+        [
+          {
+            "node": "Is Hot Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Hot Lead?": {
+      "main": [
+        [
+          {
+            "node": "Notify Sales (Hot Lead)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Notification (Warm/Cold)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Sales (Hot Lead)": {
+      "main": [
+        [
+          {
+            "node": "Merge Notify Branch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Notification (Warm/Cold)": {
+      "main": [
+        [
+          {
+            "node": "Merge Notify Branch",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Notify Branch": {
+      "main": [
+        [
+          {
+            "node": "Build Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Success Response": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "errorWorkflow": "JZ7wxcqOxM5IKrOB",
+    "availableInMCP": true
+  },
+  "versionId": "86d9148f-d9da-464b-97cd-e329b6fb8025",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "b4d163fe1103871bc186de97bfdb525f540843a7806f36bb6a22b8bfb63c5d84"
+  },
+  "nodeGroups": [],
+  "id": "E0ZOGN3v2z992z4z",
+  "tags": []
+}
