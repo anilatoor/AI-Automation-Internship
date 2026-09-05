@@ -1,0 +1,996 @@
+{
+  "name": "UrbanCart - Knowledge Base Ingestion",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1-gGMPdDYLsw0hO1tfRFBTt1DEL0nhaDl",
+          "cachedResultName": "UrbanCart Knowledge Docs",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1-gGMPdDYLsw0hO1tfRFBTt1DEL0nhaDl"
+        },
+        "event": "fileCreated",
+        "options": {
+          "fileType": "all"
+        }
+      },
+      "id": "n1",
+      "name": "KB File Added",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        128
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "uJScqAhuu64R0pu6",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1-gGMPdDYLsw0hO1tfRFBTt1DEL0nhaDl",
+          "cachedResultName": "UrbanCart Knowledge Docs",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1-gGMPdDYLsw0hO1tfRFBTt1DEL0nhaDl"
+        },
+        "event": "fileUpdated",
+        "options": {
+          "fileType": "all"
+        }
+      },
+      "id": "n2",
+      "name": "KB File Updated",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        336
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "uJScqAhuu64R0pu6",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "p1",
+                    "leftValue": "={{ $json.name }}",
+                    "operator": {
+                      "operation": "endsWith",
+                      "type": "string"
+                    },
+                    "rightValue": ".pdf"
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "x1",
+                    "leftValue": "={{ $json.name }}",
+                    "operator": {
+                      "operation": "endsWith",
+                      "type": "string"
+                    },
+                    "rightValue": ".xlsx"
+                  },
+                  {
+                    "id": "x2",
+                    "leftValue": "={{ $json.name }}",
+                    "operator": {
+                      "operation": "endsWith",
+                      "type": "string"
+                    },
+                    "rightValue": ".xls"
+                  },
+                  {
+                    "id": "x3",
+                    "leftValue": "={{ $json.name }}",
+                    "operator": {
+                      "operation": "endsWith",
+                      "type": "string"
+                    },
+                    "rightValue": ".csv"
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "XLSX"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d1",
+                    "leftValue": "={{ $json.name }}",
+                    "operator": {
+                      "operation": "endsWith",
+                      "type": "string"
+                    },
+                    "rightValue": ".docx"
+                  },
+                  {
+                    "id": "d2",
+                    "leftValue": "={{ $json.name }}",
+                    "operator": {
+                      "operation": "endsWith",
+                      "type": "string"
+                    },
+                    "rightValue": ".doc"
+                  },
+                  {
+                    "id": "d3",
+                    "leftValue": "={{ $json.name }}",
+                    "operator": {
+                      "operation": "endsWith",
+                      "type": "string"
+                    },
+                    "rightValue": ".txt"
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "DOCX/Text"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Unsupported"
+        }
+      },
+      "id": "n3",
+      "name": "Gate by File Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        64,
+        240
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "n4",
+      "name": "Skip Unsupported File",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        240,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "doc_chunks",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "metadata->>file_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Normalize KB Text').item.json.file_id }}"
+            }
+          ]
+        }
+      },
+      "id": "n6",
+      "name": "Delete Old Chunks for This File",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        240
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "AfG2czji6YBHYAiB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chunkSize": 500,
+        "chunkOverlap": 100,
+        "options": {}
+      },
+      "id": "n8",
+      "name": "Chunk KB Text",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.kb_text }}",
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "file_id",
+                "value": "={{ $json.file_id }}"
+              },
+              {
+                "name": "file_name",
+                "value": "={{ $json.file_name }}"
+              },
+              {
+                "name": "source",
+                "value": "urbancart_knowledge_drive"
+              }
+            ]
+          }
+        }
+      },
+      "id": "n9",
+      "name": "Load KB Document",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1888,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "dimensions": 1536
+        }
+      },
+      "id": "n10",
+      "name": "KB Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1744,
+        464
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "C6j7blqHkf6bKnue",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "doc_chunks"
+        },
+        "options": {
+          "queryName": "match_doc_chunks"
+        }
+      },
+      "id": "n11",
+      "name": "Insert into Knowledge Base",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1760,
+        240
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AfG2czji6YBHYAiB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## UrbanCart Knowledge Base Ingestion\nStaff drop/replace product & policy docs in the watched Drive folder. The two triggers below only catch files created/updated AFTER they start polling — they do NOT backfill files that were already sitting in the folder.\n\nRun supabase_schema_patch.sql once in Supabase SQL Editor first (adds tickets.summary + match_doc_chunks), then click 'Execute workflow' on the Manual Backfill Trigger (bottom) once to ingest everything already in the folder. After that, activate this workflow and the two pollers keep it in sync going forward.",
+        "height": 240,
+        "width": 1008,
+        "color": 3
+      },
+      "id": "n12",
+      "name": "Sticky - Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        -176
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "n13",
+      "name": "Manual Backfill Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "={{ \"'1-gGMPdDYLsw0hO1tfRFBTt1DEL0nhaDl' in parents and trashed = false\" }}",
+        "returnAll": true,
+        "filter": {},
+        "options": {}
+      },
+      "id": "n14",
+      "name": "List All KB Files",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -240,
+        560
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "uJScqAhuu64R0pu6",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "id": "40e7f0a8-7673-49b1-97ce-68d027dbed61",
+      "name": "Download PDF",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        448,
+        48
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "uJScqAhuu64R0pu6",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "2c418773-89c9-4f57-b872-b77221935f45",
+      "name": "Extract PDF Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "id": "d19c3f56-d68e-49af-905a-dedb71482ee1",
+      "name": "Download XLSX",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        448,
+        224
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "uJScqAhuu64R0pu6",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "id": "4b994ff8-f962-4e3b-916e-652c9bc38d2e",
+      "name": "Extract XLSX Rows",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Turn one spreadsheet row into one readable sentence for RAG\nconst r = $json;\nconst stock = Number(r.Stock) > 0 ? `In stock (${r.Stock})` : 'Out of stock';\nconst warranty = Number(r.Warranty_Months) > 0 ? `${r.Warranty_Months} month warranty` : 'No warranty';\nconst line = `Product: ${r.Name} | Category: ${r.Category} | Price: Rs. ${r.Price_PKR} | ${stock} | ${warranty} | ${r.Description || ''}`.trim();\nreturn { json: { kb_text: line, _file_id: $('Download XLSX').item.json.id, _file_name: $('Download XLSX').item.json.name } };"
+      },
+      "id": "10de2bc0-799e-4d41-bcc8-ad72fcba7453",
+      "name": "Serialize Catalog Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "kb_text",
+              "type": "string",
+              "value": "={{ $json.kb_text || $json.text || $json.data }}"
+            },
+            {
+              "id": "f2",
+              "name": "file_id",
+              "type": "string",
+              "value": "={{ $json._file_id || $('Gate by File Type').item.json.id }}"
+            },
+            {
+              "id": "f3",
+              "name": "file_name",
+              "type": "string",
+              "value": "={{ $json._file_name || $('Gate by File Type').item.json.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ed89df14-6f27-4156-a047-7240cf126080",
+      "name": "Normalize KB Text",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1232,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.id }}/copy",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,name,mimeType"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ name: $json.name + ' (autoconv)', mimeType: 'application/vnd.google-apps.document' }) }}",
+        "options": {}
+      },
+      "id": "d3518267-50c0-43f4-81eb-08396c36f52b",
+      "name": "Copy DOCX as GoogleDoc",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        416
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "uJScqAhuu64R0pu6",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "options": {
+          "binaryPropertyName": "data",
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "text/plain"
+            }
+          }
+        }
+      },
+      "id": "65464926-67fa-4b95-be83-26973c3f263e",
+      "name": "Download Converted Text",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        640,
+        416
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "uJScqAhuu64R0pu6",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "id": "e55f1418-1451-4858-8b4f-079c2ca4b211",
+      "name": "Extract Converted Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        832,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "deleteFile",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Copy DOCX as GoogleDoc').item.json.id }}"
+        },
+        "options": {}
+      },
+      "id": "6c78675e-b761-4ee3-8731-d7b516767427",
+      "name": "Delete Temp GDoc",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1248,
+        528
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "uJScqAhuu64R0pu6",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "g1",
+              "name": "kb_text",
+              "type": "string",
+              "value": "={{ $json.data }}"
+            },
+            {
+              "id": "g2",
+              "name": "_file_id",
+              "type": "string",
+              "value": "={{ $('Gate by File Type').item.json.id }}"
+            },
+            {
+              "id": "g3",
+              "name": "_file_name",
+              "type": "string",
+              "value": "={{ $('Gate by File Type').item.json.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a44ea3ba-094b-4fa6-b096-746490941425",
+      "name": "DOCX Text to kb_text",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "documents"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "drive_file_id"
+          ],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "drive_file_id",
+              "id": "drive_file_id",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "title",
+              "id": "title",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "status",
+              "id": "status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "doc_type",
+              "id": "doc_type",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "doc_type": "={{ $('Normalize KB Text').item.json.file_name.toLowerCase().split('.').pop() }}",
+            "drive_file_id": "={{ $('Normalize KB Text').item.json.file_id }}",
+            "status": "active",
+            "title": "={{ $('Normalize KB Text').item.json.file_name }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "929aa740-40a9-48c1-a66c-48c28d6bb741",
+      "name": "Upsert Registry (Postgres)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1504,
+        -80
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "bQYS9sWvBztBKclA",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "KB File Added": {
+      "main": [
+        [
+          {
+            "node": "Gate by File Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KB File Updated": {
+      "main": [
+        [
+          {
+            "node": "Gate by File Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Backfill Trigger": {
+      "main": [
+        [
+          {
+            "node": "List All KB Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List All KB Files": {
+      "main": [
+        [
+          {
+            "node": "Gate by File Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gate by File Type": {
+      "main": [
+        [
+          {
+            "node": "Download PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Copy DOCX as GoogleDoc",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Unsupported File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk KB Text": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Load KB Document",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load KB Document": {
+      "ai_document": [
+        [
+          {
+            "node": "Insert into Knowledge Base",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KB Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insert into Knowledge Base",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download PDF": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download XLSX": {
+      "main": [
+        [
+          {
+            "node": "Extract XLSX Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract XLSX Rows": {
+      "main": [
+        [
+          {
+            "node": "Serialize Catalog Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Text": {
+      "main": [
+        [
+          {
+            "node": "Normalize KB Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Serialize Catalog Rows": {
+      "main": [
+        [
+          {
+            "node": "Normalize KB Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize KB Text": {
+      "main": [
+        [
+          {
+            "node": "Delete Old Chunks for This File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Upsert Registry (Postgres)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insert into Knowledge Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copy DOCX as GoogleDoc": {
+      "main": [
+        [
+          {
+            "node": "Download Converted Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Converted Text": {
+      "main": [
+        [
+          {
+            "node": "Extract Converted Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Converted Text": {
+      "main": [
+        [
+          {
+            "node": "DOCX Text to kb_text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DOCX Text to kb_text": {
+      "main": [
+        [
+          {
+            "node": "Normalize KB Text",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Delete Temp GDoc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "errorWorkflow": "JZ7wxcqOxM5IKrOB",
+    "availableInMCP": true
+  },
+  "versionId": "974ab689-2284-4a6c-a08f-63f132720b68",
+  "meta": {
+    "aiBuilderAssisted": false,
+    "instanceId": "b4d163fe1103871bc186de97bfdb525f540843a7806f36bb6a22b8bfb63c5d84"
+  },
+  "nodeGroups": [],
+  "id": "ODtCoDkUI9wY5u1s",
+  "tags": []
+}
