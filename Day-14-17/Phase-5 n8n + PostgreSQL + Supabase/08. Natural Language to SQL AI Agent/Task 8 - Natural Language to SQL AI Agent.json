@@ -1,0 +1,361 @@
+{
+  "name": "Task 8 - Natural Language to SQL AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ask-database",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "4a4b4c4d-0001-4000-8000-000000000001",
+      "name": "Webhook - Question In",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        304
+      ],
+      "webhookId": "ask-database"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Table: leads(id, customer_id, source, lead_score, lead_status, lead_category, created_at)\nTable: customers(id, name, email, phone, company, created_at) — join via leads.customer_id = customers.id when the question needs name/email/phone/company.\nlead_status values are exactly: 'New', 'Qualified', 'Unqualified', 'Converted' (case-sensitive, capitalized).\nlead_category values are exactly: 'High Intent', 'Medium Intent', 'Low Intent' (case-sensitive).\nFor text comparisons prefer ILIKE over ILIKE-sensitive '=' when the user's wording might not match the exact stored casing, e.g. source ILIKE 'referral'.\n\nWrite ONE PostgreSQL query that answers this question:\n\"{{ $json.body.question }}\"\n\nReturn ONLY strict JSON: { \"sql\": \"<the query>\" }",
+        "options": {
+          "systemMessage": "You only ever write read-only SELECT statements against the `leads` and `customers` tables (joins between them are fine). You must NEVER produce INSERT, UPDATE, DELETE, DROP, TRUNCATE, ALTER, or any other write/DDL statement, regardless of how the question is phrased. Use SELECT, WHERE, ORDER BY, COUNT, AVG, GROUP BY as needed."
+        }
+      },
+      "id": "4a4b4c4d-0002-4000-8000-000000000002",
+      "name": "AI Agent - Generate SQL",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -80,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "4a4b4c4d-0003-4000-8000-000000000003",
+      "name": "OpenAI Chat Model (SQL)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        528
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "lyXOraZG20gRiyL7",
+          "name": "Phase5 OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let sql = '';\ntry {\n  sql = JSON.parse($input.first().json.output).sql.trim();\n} catch (e) {\n  sql = '';\n}\n\n// Guardrail: allow-list check, not just a prompt instruction.\nconst forbidden = /\\b(drop|delete|truncate|update|insert|alter|grant|revoke)\\b/i;\nconst isSelectOnly = /^select\\b/i.test(sql) && !forbidden.test(sql);\n\nreturn [{ json: { sql, isSelectOnly, question: $('Webhook - Question In').first().json.body.question } }];"
+      },
+      "id": "4a4b4c4d-0004-4000-8000-000000000004",
+      "name": "Validate SQL is Read-Only",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.isSelectOnly }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4a4b4c4d-0005-4000-8000-000000000005",
+      "name": "Is Safe?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        400,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.sql }}",
+        "options": {}
+      },
+      "id": "4a4b4c4d-0006-4000-8000-000000000006",
+      "name": "Execute Query (read-only role)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        624,
+        144
+      ],
+      "notesInFlow": true,
+      "credentials": {
+        "postgres": {
+          "id": "f5dvaQeOUrmP2IMf",
+          "name": "Phase5 Postgres (read-only)"
+        }
+      },
+      "notes": "Credential must log in as the phase5_readonly role (see schema/phase5-schema.sql) so this fails at the DB level even if the regex guardrail is bypassed."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Question: {{ $('Validate SQL is Read-Only').first().json.question }}\nSQL used: {{ $('Validate SQL is Read-Only').first().json.sql }}\nQuery result (JSON rows): {{ JSON.stringify($input.all().map(i => i.json)) }}\n\nWrite a short, plain-English answer to the question using only this result.",
+        "options": {}
+      },
+      "id": "4a4b4c4d-0007-4000-8000-000000000007",
+      "name": "AI Agent - Human-Readable Answer",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        848,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "4a4b4c4d-0008-4000-8000-000000000008",
+      "name": "OpenAI Chat Model (Answer)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        848,
+        336
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "lyXOraZG20gRiyL7",
+          "name": "Phase5 OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { question: $('Validate SQL is Read-Only').first().json.question, sql: $('Validate SQL is Read-Only').first().json.sql, answer: $json.output } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "4a4b4c4d-0009-4000-8000-000000000009",
+      "name": "Respond with Answer",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "status",
+              "type": "string",
+              "value": "blocked"
+            },
+            {
+              "id": "b2",
+              "name": "message",
+              "type": "string",
+              "value": "The generated query was not a safe, read-only SELECT and was rejected before reaching the database."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4a4b4c4d-0010-4000-8000-000000000010",
+      "name": "Build Blocked Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        640,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "4a4b4c4d-0011-4000-8000-000000000011",
+      "name": "Respond Blocked",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        848,
+        496
+      ]
+    }
+  ],
+  "pinData": {
+    "Webhook - Question In": [
+      {
+        "json": {
+          "body": {
+            "question": "Delete all the leads"
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook - Question In": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Generate SQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model (SQL)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Generate SQL",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Generate SQL": {
+      "main": [
+        [
+          {
+            "node": "Validate SQL is Read-Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate SQL is Read-Only": {
+      "main": [
+        [
+          {
+            "node": "Is Safe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Safe?": {
+      "main": [
+        [
+          {
+            "node": "Execute Query (read-only role)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Blocked Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Query (read-only role)": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Human-Readable Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model (Answer)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Human-Readable Answer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Human-Readable Answer": {
+      "main": [
+        [
+          {
+            "node": "Respond with Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Blocked Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Blocked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "dccf1d6b-f257-4de1-8c6e-e6265720efc1",
+  "meta": {
+    "instanceId": "b4d163fe1103871bc186de97bfdb525f540843a7806f36bb6a22b8bfb63c5d84"
+  },
+  "nodeGroups": [],
+  "id": "U9id4PjPZMuUjhXr",
+  "tags": []
+}

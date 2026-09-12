@@ -1,0 +1,571 @@
+{
+  "name": "Task 7 - AI Customer Conversation Memory",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "conversation-memory",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "3a3b3c3d-0001-4000-8000-000000000001",
+      "name": "Webhook - Chat Message In",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        304
+      ],
+      "webhookId": "conversation-memory"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH existing AS (\n  SELECT id FROM customers WHERE name = $1 LIMIT 1\n), inserted AS (\n  INSERT INTO customers (name, email, phone)\n  SELECT $1, $2, $3\n  WHERE NOT EXISTS (SELECT 1 FROM existing)\n  RETURNING id\n)\nSELECT id FROM existing\nUNION ALL\nSELECT id FROM inserted;",
+        "options": {
+          "queryReplacement": "={{ $json.name }},{{ $json.email }},{{ $json.phone }}"
+        }
+      },
+      "id": "3a3b3c3d-0002-4000-8000-000000000002",
+      "name": "Find or Create Customer",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -48,
+        304
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "KU1NXTuvBbJzEABf",
+          "name": "Phase5 Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH existing AS (\n  SELECT id FROM leads WHERE customer_id = $1 ORDER BY created_at DESC LIMIT 1\n), inserted AS (\n  INSERT INTO leads (customer_id, source, lead_status)\n  SELECT $1, 'chat', 'New'\n  WHERE NOT EXISTS (SELECT 1 FROM existing)\n  RETURNING id\n)\nSELECT id FROM existing\nUNION ALL\nSELECT id FROM inserted;",
+        "options": {
+          "queryReplacement": "={{ $json.id }}"
+        }
+      },
+      "id": "3a3b3c3d-0009-4000-8000-000000000009",
+      "name": "Find or Create Lead",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        192,
+        304
+      ],
+      "notesInFlow": true,
+      "credentials": {
+        "postgres": {
+          "id": "KU1NXTuvBbJzEABf",
+          "name": "Phase5 Postgres"
+        }
+      },
+      "notes": "Paper design (Phase 4 Task 3): Customers -> Leads -> Conversations. Conversations hang off a lead, not the customer directly, so a lead is found-or-created here before the conversation."
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH existing AS (\n  SELECT id FROM conversations WHERE lead_id = $1 AND status = 'Open' ORDER BY started_at DESC LIMIT 1\n), inserted AS (\n  INSERT INTO conversations (lead_id)\n  SELECT $1\n  WHERE NOT EXISTS (SELECT 1 FROM existing)\n  RETURNING id\n)\nSELECT id FROM existing\nUNION ALL\nSELECT id FROM inserted;",
+        "options": {
+          "queryReplacement": "={{ $json.id }}"
+        }
+      },
+      "id": "3a3b3c3d-0003-4000-8000-000000000003",
+      "name": "Find or Create Conversation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        400,
+        304
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "KU1NXTuvBbJzEABf",
+          "name": "Phase5 Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "messages",
+          "mode": "list",
+          "cachedResultName": "messages"
+        },
+        "where": {
+          "values": [
+            {
+              "column": "conversation_id",
+              "value": "={{ $json.id }}"
+            }
+          ]
+        },
+        "sort": {
+          "values": [
+            {
+              "column": "sent_at"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3a3b3c3d-0004-4000-8000-000000000004",
+      "name": "Retrieve Previous Messages",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        624,
+        304
+      ],
+      "alwaysOutputData": true,
+      "notesInFlow": true,
+      "credentials": {
+        "postgres": {
+          "id": "KU1NXTuvBbJzEABf",
+          "name": "Phase5 Postgres"
+        }
+      },
+      "notes": "alwaysOutputData: true — a brand-new conversation legitimately has 0 previous messages; without this the node emits no items and the whole execution silently stops here instead of continuing to generate a first reply."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Conversation history (from the database, not model memory):\n{{ $('Retrieve Previous Messages').all().filter(i => i.json.sender).map(i => i.json.sender + ': ' + i.json.message).join('\\n') || '(no previous messages)' }}\n\nCurrent customer message: {{ $('Webhook - Chat Message In').item.json.message }}\n\nAnswer using ONLY facts present in the conversation history above or the current message. If asked something not covered there (e.g. their name, before they've given it), say you don't have that information yet.",
+        "options": {
+          "systemMessage": "You are a customer support agent. Your only memory is the conversation history passed to you each turn - you must not claim to remember anything not explicitly shown there."
+        }
+      },
+      "id": "3a3b3c3d-0005-4000-8000-000000000005",
+      "name": "AI Agent - Generate Response",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        784,
+        304
+      ],
+      "executeOnce": true,
+      "notesInFlow": true,
+      "notes": "executeOnce: true — \"Retrieve Previous Messages\" emits one item per DB row (0, 1, or many). The prompt already aggregates all of them via $(...).all(), so this node (and everything downstream: saving/syncing messages, responding) must run exactly once per request, not once per history row."
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "3a3b3c3d-0006-4000-8000-000000000006",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        784,
+        528
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "lyXOraZG20gRiyL7",
+          "name": "Phase5 OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "messages",
+          "mode": "list",
+          "cachedResultName": "messages"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "conversation_id": "={{ $('Find or Create Conversation').first().json.id }}",
+            "sender": "customer",
+            "message": "={{ $('Webhook - Chat Message In').first().json.message }}\n"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sender",
+              "displayName": "sender",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sent_at",
+              "displayName": "sent_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "3a3b3c3d-0007-4000-8000-000000000007",
+      "name": "Save Customer Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1088,
+        304
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "KU1NXTuvBbJzEABf",
+          "name": "Phase5 Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "messages",
+          "mode": "list",
+          "cachedResultName": "messages"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "conversation_id": "={{ $('Find or Create Conversation').first().json.id }}",
+            "sender": "ai",
+            "message": "={{ $('AI Agent - Generate Response').first().json.output }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sender",
+              "displayName": "sender",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sent_at",
+              "displayName": "sent_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "3a3b3c3d-0008-4000-8000-000000000008",
+      "name": "Save AI Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1312,
+        304
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "KU1NXTuvBbJzEABf",
+          "name": "Phase5 Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "messages",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "conversation_id",
+              "fieldValue": "={{ $('Find or Create Conversation').first().json.id }}"
+            },
+            {
+              "fieldId": "sender",
+              "fieldValue": "ai"
+            },
+            {
+              "fieldId": "message",
+              "fieldValue": "={{ $('AI Agent - Generate Response').first().json.output }}"
+            }
+          ]
+        }
+      },
+      "id": "3a3b3c3d-0010-4000-8000-000000000010",
+      "name": "Sync AI Message to Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        304
+      ],
+      "notesInFlow": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "8eli2bMPnGFo8hXt",
+          "name": "Phase5 Supabase"
+        }
+      },
+      "notes": "Same underlying DB as the Postgres node (one Supabase project doubles as both) — updates the row Save AI Message just inserted via the Supabase REST client, instead of inserting a duplicate."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { reply: $('AI Agent - Generate Response').first().json.output } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "3a3b3c3d-0011-4000-8000-000000000011",
+      "name": "Respond with AI Reply",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1744,
+        304
+      ]
+    }
+  ],
+  "pinData": {
+    "Webhook - Chat Message In": [
+      {
+        "json": {
+          "name": "Bilal Ahmed",
+          "email": "bilal.ahmed@example.com",
+          "phone": "03451234567",
+          "message": "What is my name?"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook - Chat Message In": {
+      "main": [
+        [
+          {
+            "node": "Find or Create Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find or Create Customer": {
+      "main": [
+        [
+          {
+            "node": "Find or Create Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find or Create Lead": {
+      "main": [
+        [
+          {
+            "node": "Find or Create Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find or Create Conversation": {
+      "main": [
+        [
+          {
+            "node": "Retrieve Previous Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Previous Messages": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Generate Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Generate Response",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Generate Response": {
+      "main": [
+        [
+          {
+            "node": "Save Customer Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Customer Message": {
+      "main": [
+        [
+          {
+            "node": "Save AI Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save AI Message": {
+      "main": [
+        [
+          {
+            "node": "Sync AI Message to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync AI Message to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Respond with AI Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "51b7732e-0910-42af-8d26-6f71b2ea52f1",
+  "meta": {
+    "instanceId": "b4d163fe1103871bc186de97bfdb525f540843a7806f36bb6a22b8bfb63c5d84"
+  },
+  "nodeGroups": [],
+  "id": "RfP4lcbsDi4jjEPr",
+  "tags": []
+}
